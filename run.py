@@ -55,7 +55,15 @@ shutil.move(r'version.dll', 'Chrome-bin')
 shutil.move(r'chrome++.ini', 'Chrome-bin')
 
 os.rename(r'Chrome-bin', 'Chrome')
+
+# 确保构建目录存在
+os.makedirs('build/release', exist_ok=True)
+
 shutil.move(r'Chrome', 'build/release/Chrome')
+
+# 创建版本信息文件
+with open('build/release/Chrome/version.txt', 'w') as f:
+    f.write(version)
 
 # 会自动封装为zip
 env = os.getenv('GITHUB_ENV')
