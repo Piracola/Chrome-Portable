@@ -76,14 +76,36 @@ print(version)
 if version == '0.0.0.0':
     exit(1)
 
-# 获得Chrome-bin,version.dll,组装到一块就可以分发了
-shutil.move(r'version.dll', 'Chrome-bin')
-shutil.move(r'chrome++.ini', 'Chrome-bin')
+# 下载setdll工具
+print('Downloading setdll tool...')
+setdll_url = 'https://github.com/Bush2021/chrome_plus/releases/latest/download/setdll.7z'
+response = requests.get(setdll_url)
+with open('setdll.7z', 'wb') as f:
+    f.write(response.content)
+
+# 解压setdll工具
+print('Extracting setdll tool...')
+os.system(f'{seven_zip_path} x setdll.7z -osetdll_temp -y')
+
+# 复制配置文件和DLL
+print('Copying configuration and DLLs from setdll...')
+if os.path.exists(os.path.join('setdll_temp', 'chrome++.ini')):
+    shutil.copy(os.path.join('setdll_temp', 'chrome++.ini'), os.path.join('Chrome-bin', 'chrome++.ini'))
+
+# 复制并重命名version-x64.dll为version.dll
+if os.path.exists(os.path.join('setdll_temp', 'version-x64.dll')):
+    shutil.copy(os.path.join('setdll_temp', 'version-x64.dll'), os.path.join('Chrome-bin', 'version.dll'))
+
+# 复制setdll工具以便后续注入
+if os.path.exists(os.path.join('setdll_temp', 'setdll-x64.exe')):
+    shutil.copy(os.path.join('setdll_temp', 'setdll-x64.exe'), os.path.join('Chrome-bin', 'setdll-x64.exe'))
 
 os.rename(r'Chrome-bin', 'Chrome')
 
 # 确保构建目录存在
 os.makedirs('build/release', exist_ok=True)
+if os.path.exists('build/release/Chrome'):
+    shutil.rmtree('build/release/Chrome')
 
 shutil.move(r'Chrome', 'build/release/Chrome')
 
@@ -95,22 +117,6 @@ with open('build/release/Chrome/version.txt', 'w') as f:
 os.makedirs('build/release/Chrome/Data', exist_ok=True)
 os.makedirs('build/release/Chrome/Cache', exist_ok=True)
 
-# 下载setdll工具
-print('Downloading setdll tool...')
-setdll_url = 'https://github.com/Bush2021/chrome_plus/releases/latest/download/setdll.7z'
-response = requests.get(setdll_url)
-with open('setdll.7z', 'wb') as f:
-    f.write(response.content)
-
-# 解压setdll工具
-print('Extracting setdll tool...')
-os.system(f'{seven_zip_path} x setdll.7z -osetdll_temp')
-
-# 复制setdll工具到Chrome目录
-for file in os.listdir('setdll_temp'):
-    if file.startswith('setdll-') or file.startswith('version-'):
-        shutil.copy(os.path.join('setdll_temp', file), 'build/release/Chrome/')
-
 # 执行DLL注入
 print('Injecting version.dll into chrome.exe...')
 chrome_dir = 'build/release/Chrome'
@@ -121,6 +127,8 @@ version_dll = os.path.join(chrome_dir, 'version.dll')
 if os.path.exists(setdll_exe):
     os.system(f'"{setdll_exe}" /d:"{version_dll}" "{chrome_exe}"')
     print('DLL injection completed successfully!')
+    # 删除setdll工具
+    os.remove(setdll_exe)
 else:
     print('Warning: setdll-x64.exe not found, skipping DLL injection')
 
@@ -131,14 +139,12 @@ os.remove('setdll.7z')
 # 清理自动下载的7zr.exe（可选，保留以便下次使用）
 # os.remove('7zr.exe')
 
-# 删除setdll工具文件（保留注入后的chrome.exe和version.dll）
-for file in os.listdir(chrome_dir):
-    if file.startswith('setdll-'):
-        os.remove(os.path.join(chrome_dir, file))
-
 # 会自动封装为zip
 env = os.getenv('GITHUB_ENV')
-with open(env, 'a') as f:
-    f.write(f'BUILD_NAME=Win64_{version}_{datetime.now().strftime("%Y-%m-%d")}')
+if env:
+    with open(env, 'a') as f:
+        f.write(f'BUILD_NAME=Win64_{version}_{datetime.now().strftime("%Y-%m-%d")}')
+else:
+    print(f'BUILD_NAME=Win64_{version}_{datetime.now().strftime("%Y-%m-%d")}')
 
 # os.system(f'7z.exe a build/release/Win64_{version}_{datetime.now().strftime("%Y-%m-%d")}.7z Chrome')
