@@ -47,8 +47,12 @@ with open("chrome.7z.exe", "wb") as file:
     file.write(response.content)
 
 # 使用7zr.exe解压Chrome
-os.system(f'{seven_zip_path} x chrome.7z.exe')
-os.system(f'{seven_zip_path} x chrome.7z')
+print('Extracting Chrome installer...')
+result1 = os.system(f'{seven_zip_path} x chrome.7z.exe -y')
+
+if result1 != 0:
+    print('Error: Chrome installer extraction failed!')
+    exit(1)
 
 # 获得Chrime-bin,version.dll,组装到一块就可以分发了
 version = '0.0.0.0'
@@ -58,6 +62,9 @@ path = 'Chrome-bin'
 if not os.path.exists(path):
     print(f'Error: {path} directory not found!')
     print('Chrome extraction failed. Please check if 7z is installed correctly.')
+    print('Current directory contents:')
+    for file in os.listdir('.'):
+        print(f'  - {file}')
     exit(1)
 
 for i in os.listdir(path):
@@ -104,15 +111,12 @@ for file in os.listdir('setdll_temp'):
     if file.startswith('setdll-') or file.startswith('version-'):
         shutil.copy(os.path.join('setdll_temp', file), 'build/release/Chrome/')
 
-# 复制version-x64.dll到Chrome目录
-shutil.copy('version-x64.dll', 'build/release/Chrome/version-x64.dll')
-
 # 执行DLL注入
 print('Injecting version.dll into chrome.exe...')
 chrome_dir = 'build/release/Chrome'
 chrome_exe = os.path.join(chrome_dir, version, 'chrome.exe')
 setdll_exe = os.path.join(chrome_dir, 'setdll-x64.exe')
-version_dll = os.path.join(chrome_dir, 'version-x64.dll')
+version_dll = os.path.join(chrome_dir, 'version.dll')
 
 if os.path.exists(setdll_exe):
     os.system(f'"{setdll_exe}" /d:"{version_dll}" "{chrome_exe}"')
@@ -127,9 +131,9 @@ os.remove('setdll.7z')
 # 清理自动下载的7zr.exe（可选，保留以便下次使用）
 # os.remove('7zr.exe')
 
-# 删除setdll工具文件（保留注入后的chrome.exe）
+# 删除setdll工具文件（保留注入后的chrome.exe和version.dll）
 for file in os.listdir(chrome_dir):
-    if file.startswith('setdll-') or file.startswith('version-'):
+    if file.startswith('setdll-'):
         os.remove(os.path.join(chrome_dir, file))
 
 # 会自动封装为zip
