@@ -90,7 +90,7 @@ os.makedirs('build/release/Chrome/Cache', exist_ok=True)
 
 # 下载setdll工具
 print('Downloading setdll tool...')
-setdll_url = 'https://github.com/Bush2021/chrome_plus/releases/download/latest/setdll.7z'
+setdll_url = 'https://github.com/Bush2021/chrome_plus/releases/latest/download/setdll.7z'
 response = requests.get(setdll_url)
 with open('setdll.7z', 'wb') as f:
     f.write(response.content)
