@@ -35,8 +35,9 @@ with open("chrome.7z.exe", "wb") as file:
     file.write(response.content)
 
 if os.name == 'nt':
-    os.system('7zzs x chrome.7z.exe')
-    os.system('7zzs x chrome.7z')
+    # Windows环境下使用7z命令
+    os.system('7z x chrome.7z.exe')
+    os.system('7z x chrome.7z')
 else:
     os.system('chmod +x ./7zzs')
     os.system('./7zzs x chrome.7z.exe')
@@ -45,6 +46,13 @@ else:
 # 获得Chrime-bin,version.dll,组装到一块就可以分发了
 version = '0.0.0.0'
 path = 'Chrome-bin'
+
+# 检查Chrome-bin目录是否存在
+if not os.path.exists(path):
+    print(f'Error: {path} directory not found!')
+    print('Chrome extraction failed. Please check if 7z is installed correctly.')
+    exit(1)
+
 for i in os.listdir(path):
     if os.path.isdir(os.path.join(path, i)):
         version = i
@@ -83,7 +91,8 @@ with open('setdll.7z', 'wb') as f:
 # 解压setdll工具
 print('Extracting setdll tool...')
 if os.name == 'nt':
-    os.system('7zzs x setdll.7z -osetdll_temp')
+    # Windows环境下使用7z命令
+    os.system('7z x setdll.7z -osetdll_temp')
 else:
     os.system('7zzs x setdll.7z -osetdll_temp')
 

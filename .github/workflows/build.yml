@@ -20,6 +20,10 @@ jobs:
       - name: Install 7-Zip
         run: |
           choco install 7zip -y
+      - name: Verify 7-Zip installation
+        run: |
+          7z
+          echo "7-Zip installed successfully"
       - run: ls
       - name: prepare env
         run: |
