@@ -34,9 +34,13 @@ response = requests.get(url + name)
 with open("chrome.7z.exe", "wb") as file:
     file.write(response.content)
 
-os.system('chmod +x ./7zzs')
-os.system('./7zzs x chrome.7z.exe')
-os.system('./7zzs x chrome.7z')
+if os.name == 'nt':
+    os.system('7zzs x chrome.7z.exe')
+    os.system('7zzs x chrome.7z')
+else:
+    os.system('chmod +x ./7zzs')
+    os.system('./7zzs x chrome.7z.exe')
+    os.system('./7zzs x chrome.7z')
 
 # 获得Chrime-bin,version.dll,组装到一块就可以分发了
 version = '0.0.0.0'
@@ -64,6 +68,54 @@ shutil.move(r'Chrome', 'build/release/Chrome')
 # 创建版本信息文件
 with open('build/release/Chrome/version.txt', 'w') as f:
     f.write(version)
+
+# 创建必要的数据目录
+os.makedirs('build/release/Chrome/Data', exist_ok=True)
+os.makedirs('build/release/Chrome/Cache', exist_ok=True)
+
+# 下载setdll工具
+print('Downloading setdll tool...')
+setdll_url = 'https://github.com/Bush2021/chrome_plus/releases/download/latest/setdll.7z'
+response = requests.get(setdll_url)
+with open('setdll.7z', 'wb') as f:
+    f.write(response.content)
+
+# 解压setdll工具
+print('Extracting setdll tool...')
+if os.name == 'nt':
+    os.system('7zzs x setdll.7z -osetdll_temp')
+else:
+    os.system('7zzs x setdll.7z -osetdll_temp')
+
+# 复制setdll工具到Chrome目录
+for file in os.listdir('setdll_temp'):
+    if file.startswith('setdll-') or file.startswith('version-'):
+        shutil.copy(os.path.join('setdll_temp', file), 'build/release/Chrome/')
+
+# 复制version-x64.dll到Chrome目录
+shutil.copy('version-x64.dll', 'build/release/Chrome/version-x64.dll')
+
+# 执行DLL注入
+print('Injecting version.dll into chrome.exe...')
+chrome_dir = 'build/release/Chrome'
+chrome_exe = os.path.join(chrome_dir, version, 'chrome.exe')
+setdll_exe = os.path.join(chrome_dir, 'setdll-x64.exe')
+version_dll = os.path.join(chrome_dir, 'version-x64.dll')
+
+if os.path.exists(setdll_exe):
+    os.system(f'"{setdll_exe}" /d:"{version_dll}" "{chrome_exe}"')
+    print('DLL injection completed successfully!')
+else:
+    print('Warning: setdll-x64.exe not found, skipping DLL injection')
+
+# 清理临时文件
+shutil.rmtree('setdll_temp', ignore_errors=True)
+os.remove('setdll.7z')
+
+# 删除setdll工具文件（保留注入后的chrome.exe）
+for file in os.listdir(chrome_dir):
+    if file.startswith('setdll-') or file.startswith('version-'):
+        os.remove(os.path.join(chrome_dir, file))
 
 # 会自动封装为zip
 env = os.getenv('GITHUB_ENV')

@@ -11,23 +11,26 @@ on:
 
 jobs:
   Warp_Chrome:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4.7.1
         with:
           python-version: '3.10'
+      - name: Install 7-Zip
+        run: |
+          choco install 7zip -y
       - run: ls
       - name: prepare env
         run: |
-          python3 -m pip install -r requirements.txt
-          python3 run.py
+          python -m pip install -r requirements.txt
+          python run.py
       - name: Get current date and version
         id: date_version
         run: |
-          echo "::set-output name=date::$(date +'%Y-%m-%d')"
+          echo "::set-output name=date::$(Get-Date -Format 'yyyy-MM-dd')"
           # 从构建输出中的 version.txt 文件提取版本信息
-          echo "::set-output name=version::$(cat build/release/Chrome/version.txt)"
+          echo "::set-output name=version::$(Get-Content build/release/Chrome/version.txt)"
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -46,8 +49,7 @@ jobs:
           prerelease: false
       - name: Package Release
         run: |
-          cd build/release
-          zip -r ../Chrome++_${{ steps.date_version.outputs.date }}.zip Chrome/
+          Compress-Archive -Path build/release/Chrome -DestinationPath build/Chrome++_${{ steps.date_version.outputs.date }}.zip
       - name: Upload Release Asset
         id: upload-release-asset 
         uses: actions/upload-release-asset@v1
