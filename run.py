@@ -29,19 +29,26 @@ name = dom.getElementsByTagName("action")[0].getAttribute("run")
 
 print(url, name)
 
+# 下载7-Zip命令行工具（如果不存在）
+seven_zip_url = 'https://www.7-zip.org/a/7zr.exe'
+seven_zip_path = '7zr.exe'
+
+if not os.path.exists(seven_zip_path):
+    print(f'Downloading 7-Zip from {seven_zip_url}...')
+    response = requests.get(seven_zip_url)
+    with open(seven_zip_path, 'wb') as f:
+        f.write(response.content)
+    print('7-Zip downloaded successfully!')
+
+# 下载Chrome
 response = requests.get(url + name)
 
 with open("chrome.7z.exe", "wb") as file:
     file.write(response.content)
 
-if os.name == 'nt':
-    # Windows环境下使用7z命令
-    os.system('7z x chrome.7z.exe')
-    os.system('7z x chrome.7z')
-else:
-    os.system('chmod +x ./7zzs')
-    os.system('./7zzs x chrome.7z.exe')
-    os.system('./7zzs x chrome.7z')
+# 使用7zr.exe解压Chrome
+os.system(f'{seven_zip_path} x chrome.7z.exe')
+os.system(f'{seven_zip_path} x chrome.7z')
 
 # 获得Chrime-bin,version.dll,组装到一块就可以分发了
 version = '0.0.0.0'
@@ -90,11 +97,7 @@ with open('setdll.7z', 'wb') as f:
 
 # 解压setdll工具
 print('Extracting setdll tool...')
-if os.name == 'nt':
-    # Windows环境下使用7z命令
-    os.system('7z x setdll.7z -osetdll_temp')
-else:
-    os.system('7zzs x setdll.7z -osetdll_temp')
+os.system(f'{seven_zip_path} x setdll.7z -osetdll_temp')
 
 # 复制setdll工具到Chrome目录
 for file in os.listdir('setdll_temp'):
@@ -120,6 +123,9 @@ else:
 # 清理临时文件
 shutil.rmtree('setdll_temp', ignore_errors=True)
 os.remove('setdll.7z')
+
+# 清理自动下载的7zr.exe（可选，保留以便下次使用）
+# os.remove('7zr.exe')
 
 # 删除setdll工具文件（保留注入后的chrome.exe）
 for file in os.listdir(chrome_dir):

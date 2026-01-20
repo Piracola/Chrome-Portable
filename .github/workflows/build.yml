@@ -17,13 +17,6 @@ jobs:
       - uses: actions/setup-python@v4.7.1
         with:
           python-version: '3.10'
-      - name: Install 7-Zip
-        run: |
-          choco install 7zip -y
-      - name: Verify 7-Zip installation
-        run: |
-          7z
-          echo "7-Zip installed successfully"
       - run: ls
       - name: prepare env
         run: |
