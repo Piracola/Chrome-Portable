@@ -167,10 +167,6 @@ def build_chrome(channel='win_stable_x64'):
     with open('build/release/Chrome/version.txt', 'w') as f:
         f.write(version)
 
-    # 创建必要的数据目录
-    os.makedirs('build/release/Chrome/Data', exist_ok=True)
-    os.makedirs('build/release/Chrome/Cache', exist_ok=True)
-
     # 9. 执行 DLL 注入
     print('Injecting version.dll into chrome.exe...')
     chrome_dir = 'build/release/Chrome'

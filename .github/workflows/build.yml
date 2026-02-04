@@ -10,66 +10,68 @@ on:
     - cron: "0 8 * * *"
 
 jobs:
-  Warp_Chrome:
+  build_and_release:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channel: [stable, beta]
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-python@v4.7.1
         with:
           python-version: '3.10'
-      - run: ls
-      - name: prepare env
+          
+      - name: Install dependencies
         run: |
           python -m pip install -r requirements.txt
-          if ("${{ matrix.channel }}" -eq "beta") {
-            python run_beta.py
-          } else {
-            python run.py
-          }
-      - name: Get current date and version
-        id: date_version
+          New-Item -ItemType Directory -Force -Path build/assets
+
+      - name: Build Stable
         run: |
-          echo "::set-output name=date::$(Get-Date -Format 'yyyy-MM-dd')"
-          # 从构建输出中的 version.txt 文件提取版本信息
-          echo "::set-output name=version::$(Get-Content build/release/Chrome/version.txt)"
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.date_version.outputs.date }}-${{ matrix.channel }}
-          release_name: Chrome++ ${{ matrix.channel }} Release ${{ steps.date_version.outputs.date }}
-          body: |
-            Chrome++ ${{ matrix.channel }} 构建版本
-            
-            构建时间: ${{ steps.date_version.outputs.date }}
-            版本信息: ${{ steps.date_version.outputs.version }}
-            
-          draft: false
-          prerelease: false
-      - name: Package Release
+          python run.py
+          $version = Get-Content build/release/Chrome/version.txt
+          echo "STABLE_VERSION=$version" >> $env:GITHUB_ENV
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "BUILD_DATE=$date" >> $env:GITHUB_ENV
+          $zipName = "Chrome++_stable_$date.zip"
+          Compress-Archive -Path build/release/Chrome -DestinationPath "build/assets/$zipName"
+
+      - name: Build Beta
         run: |
-          $zipName = "Chrome++_${{ matrix.channel }}_${{ steps.date_version.outputs.date }}.zip"
-          Compress-Archive -Path build/release/Chrome -DestinationPath "build/$zipName"
-          echo "ASSET_NAME=$zipName" >> $env:GITHUB_ENV
-      - name: Upload Release Asset
-        id: upload-release-asset 
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/${{ env.ASSET_NAME }}
-          asset_name: ${{ env.ASSET_NAME }}
-          asset_content_type: application/zip
-      - name: upload
+          python run_beta.py
+          $version = Get-Content build/release/Chrome/version.txt
+          echo "BETA_VERSION=$version" >> $env:GITHUB_ENV
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          $zipName = "Chrome++_beta_$date.zip"
+          Compress-Archive -Path build/release/Chrome -DestinationPath "build/assets/$zipName"
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BUILD_NAME }}
-          path: build/release/*
+          name: Chrome-Portable-Builds
+          path: build/assets/*.zip
           retention-days: 15
+
+      - name: Create Release
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.BUILD_DATE }}
+          name: Chrome++ Release ${{ env.BUILD_DATE }}
+          body: |
+            Chrome++ 构建版本 ${{ env.BUILD_DATE }}
+            
+            Stable 版本: ${{ env.STABLE_VERSION }}
+            Beta 版本: ${{ env.BETA_VERSION }}
+          files: build/assets/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete Older Releases
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        uses: dev-drprasad/delete-older-releases@v0.3.4
+        with:
+          keep_latest: 10
+          delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
