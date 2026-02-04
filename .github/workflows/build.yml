@@ -12,6 +12,10 @@ on:
 jobs:
   Warp_Chrome:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [stable, beta]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4.7.1
@@ -21,7 +25,11 @@ jobs:
       - name: prepare env
         run: |
           python -m pip install -r requirements.txt
-          python run.py
+          if ("${{ matrix.channel }}" -eq "beta") {
+            python run_beta.py
+          } else {
+            python run.py
+          }
       - name: Get current date and version
         id: date_version
         run: |
@@ -34,10 +42,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.date_version.outputs.date }}
-          release_name: Chrome++ Release ${{ steps.date_version.outputs.date }}
+          tag_name: v${{ steps.date_version.outputs.date }}-${{ matrix.channel }}
+          release_name: Chrome++ ${{ matrix.channel }} Release ${{ steps.date_version.outputs.date }}
           body: |
-            Chrome++ 构建版本
+            Chrome++ ${{ matrix.channel }} 构建版本
             
             构建时间: ${{ steps.date_version.outputs.date }}
             版本信息: ${{ steps.date_version.outputs.version }}
@@ -46,7 +54,9 @@ jobs:
           prerelease: false
       - name: Package Release
         run: |
-          Compress-Archive -Path build/release/Chrome -DestinationPath build/Chrome++_${{ steps.date_version.outputs.date }}.zip
+          $zipName = "Chrome++_${{ matrix.channel }}_${{ steps.date_version.outputs.date }}.zip"
+          Compress-Archive -Path build/release/Chrome -DestinationPath "build/$zipName"
+          echo "ASSET_NAME=$zipName" >> $env:GITHUB_ENV
       - name: Upload Release Asset
         id: upload-release-asset 
         uses: actions/upload-release-asset@v1
@@ -54,8 +64,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/Chrome++_${{ steps.date_version.outputs.date }}.zip
-          asset_name: Chrome++_${{ steps.date_version.outputs.date }}.zip
+          asset_path: ./build/${{ env.ASSET_NAME }}
+          asset_name: ${{ env.ASSET_NAME }}
           asset_content_type: application/zip
       - name: upload
         uses: actions/upload-artifact@v4
