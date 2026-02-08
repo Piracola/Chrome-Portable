@@ -26,7 +26,14 @@ jobs:
           python -m pip install -r requirements.txt
           New-Item -ItemType Directory -Force -Path build/assets
 
+      - name: Check for updates
+        id: check_updates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python check_versions.py
+
       - name: Build Stable
+        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         run: |
           python run.py
           $version = Get-Content build/release/Chrome/version.txt
@@ -37,6 +44,7 @@ jobs:
           Compress-Archive -Path build/release/Chrome -DestinationPath "build/assets/$zipName"
 
       - name: Build Beta
+        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         run: |
           python run_beta.py
           $version = Get-Content build/release/Chrome/version.txt
@@ -46,6 +54,7 @@ jobs:
           Compress-Archive -Path build/release/Chrome -DestinationPath "build/assets/$zipName"
 
       - name: Upload Artifacts
+        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Chrome-Portable-Builds
@@ -53,7 +62,7 @@ jobs:
           retention-days: 15
 
       - name: Create Release
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && env.UPDATE_NEEDED == 'true')
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ env.BUILD_DATE }}
@@ -68,7 +77,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Delete Older Releases
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && env.UPDATE_NEEDED == 'true')
         uses: dev-drprasad/delete-older-releases@v0.3.4
         with:
           keep_latest: 10
