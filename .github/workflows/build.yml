@@ -41,7 +41,7 @@ jobs:
           $date = Get-Date -Format 'yyyy-MM-dd'
           echo "BUILD_DATE=$date" >> $env:GITHUB_ENV
           $zipName = "Chrome++_stable_$date.zip"
-          Compress-Archive -Path build/release/Chrome -DestinationPath "build/assets/$zipName"
+          Compress-Archive -Path build/release/* -DestinationPath "build/assets/$zipName"
 
       - name: Build Beta
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
@@ -51,7 +51,7 @@ jobs:
           echo "BETA_VERSION=$version" >> $env:GITHUB_ENV
           $date = Get-Date -Format 'yyyy-MM-dd'
           $zipName = "Chrome++_beta_$date.zip"
-          Compress-Archive -Path build/release/Chrome -DestinationPath "build/assets/$zipName"
+          Compress-Archive -Path build/release/* -DestinationPath "build/assets/$zipName"
 
       - name: Upload Artifacts
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
