@@ -32,15 +32,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python check_versions.py
 
+      - name: Set Build Date
+        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
+        run: |
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+          echo "BUILD_DATE=$date" >> $env:GITHUB_ENV
+          echo "BUILD_TIMESTAMP=$timestamp" >> $env:GITHUB_ENV
+
       - name: Build Stable
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         run: |
           python run.py
           $version = Get-Content build/release/Chrome/version.txt
           echo "STABLE_VERSION=$version" >> $env:GITHUB_ENV
-          $date = Get-Date -Format 'yyyy-MM-dd'
-          echo "BUILD_DATE=$date" >> $env:GITHUB_ENV
-          $zipName = "Chrome++_stable_$date.zip"
+          $zipName = "Chrome++_stable_${{ env.BUILD_DATE }}.zip"
           Compress-Archive -Path build/release/* -DestinationPath "build/assets/$zipName"
 
       - name: Build Beta
@@ -49,8 +55,7 @@ jobs:
           python run_beta.py
           $version = Get-Content build/release/Chrome/version.txt
           echo "BETA_VERSION=$version" >> $env:GITHUB_ENV
-          $date = Get-Date -Format 'yyyy-MM-dd'
-          $zipName = "Chrome++_beta_$date.zip"
+          $zipName = "Chrome++_beta_${{ env.BUILD_DATE }}.zip"
           Compress-Archive -Path build/release/* -DestinationPath "build/assets/$zipName"
 
       - name: Upload Artifacts
@@ -65,7 +70,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && env.UPDATE_NEEDED == 'true')
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.BUILD_DATE }}
+          tag_name: v${{ env.BUILD_TIMESTAMP }}
           name: Chrome++ Release ${{ env.BUILD_DATE }}
           body: |
             Chrome++ 构建版本 ${{ env.BUILD_DATE }}
