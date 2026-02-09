@@ -170,7 +170,7 @@ def build_chrome(channel='win_stable_x64'):
     # 复制开始.bat到输出目录
     if os.path.exists('开始.bat'):
         shutil.copy('开始.bat', 'build/release/开始.bat')
-        print('开始.bat copied successfully!')
+        print('Start.bat copied successfully!')
 
     # 9. 执行 DLL 注入
     print('Injecting version.dll into chrome.exe...')
