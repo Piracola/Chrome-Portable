@@ -1,4 +1,3 @@
-import base64
 import os
 import shutil
 import xml.etree.ElementTree as tree

@@ -36,48 +36,61 @@ jobs:
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         run: |
           $date = Get-Date -Format 'yyyy-MM-dd'
-          $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
           echo "BUILD_DATE=$date" >> $env:GITHUB_ENV
-          echo "BUILD_TIMESTAMP=$timestamp" >> $env:GITHUB_ENV
 
       - name: Build Stable
-        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
+        if: github.event_name != 'schedule' || env.STABLE_UPDATE == 'true'
         run: |
           python run.py
           $version = Get-Content build/release/Chrome/version.txt
           echo "STABLE_VERSION=$version" >> $env:GITHUB_ENV
-          $zipName = "Chrome++_stable_${{ env.BUILD_DATE }}.zip"
-          Compress-Archive -Path build/release/* -DestinationPath "build/assets/$zipName"
+          $archiveName = "Chrome++_stable_${{ env.BUILD_DATE }}.7z"
+          7z a -t7z -mx=9 "build/assets/$archiveName" build/release/*
 
       - name: Build Beta
-        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
+        if: github.event_name != 'schedule' || env.BETA_UPDATE == 'true'
         run: |
           python run_beta.py
           $version = Get-Content build/release/Chrome/version.txt
           echo "BETA_VERSION=$version" >> $env:GITHUB_ENV
-          $zipName = "Chrome++_beta_${{ env.BUILD_DATE }}.zip"
-          Compress-Archive -Path build/release/* -DestinationPath "build/assets/$zipName"
+          $archiveName = "Chrome++_beta_${{ env.BUILD_DATE }}.7z"
+          7z a -t7z -mx=9 "build/assets/$archiveName" build/release/*
 
       - name: Upload Artifacts
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Chrome-Portable-Builds
-          path: build/assets/*.zip
+          path: build/assets/*.7z
           retention-days: 15
 
-      - name: Create Release
-        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && env.UPDATE_NEEDED == 'true')
+      - name: Update Existing Release
+        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python update_release.py
+
+      - name: Upload Assets to Existing Release
+        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.BUILD_TIMESTAMP }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: build/assets/*.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create New Release
+        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.BUILD_DATE }}
           name: Chrome++ Release ${{ env.BUILD_DATE }}
           body: |
             Chrome++ 构建版本 ${{ env.BUILD_DATE }}
             
             Stable 版本: ${{ env.STABLE_VERSION }}
             Beta 版本: ${{ env.BETA_VERSION }}
-          files: build/assets/*.zip
+          files: build/assets/*.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
