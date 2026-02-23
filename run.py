@@ -142,8 +142,11 @@ def build_chrome(channel='win_stable_x64'):
 
     # 7. 组装文件
     print('Copying configuration and DLLs from setdll...')
-    if os.path.exists(os.path.join('setdll_temp', 'chrome++.ini')):
-        shutil.copy(os.path.join('setdll_temp', 'chrome++.ini'), os.path.join('Chrome-bin', 'chrome++.ini'))
+    if os.path.exists('chrome++.ini'):
+        shutil.copy('chrome++.ini', os.path.join('Chrome-bin', 'chrome++.ini'))
+        print('chrome++.ini copied from repository!')
+    else:
+        print('Warning: chrome++.ini not found in repository!')
 
     if os.path.exists(os.path.join('setdll_temp', 'version-x64.dll')):
         shutil.copy(os.path.join('setdll_temp', 'version-x64.dll'), os.path.join('Chrome-bin', 'version.dll'))
