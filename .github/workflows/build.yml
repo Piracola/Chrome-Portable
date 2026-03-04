@@ -83,10 +83,10 @@ jobs:
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'true'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.BUILD_DATE }}
-          name: Chrome++ Release ${{ env.BUILD_DATE }}
+          tag_name: v${{ env.STABLE_VERSION }}
+          name: Chrome++ ${{ env.STABLE_VERSION }}
           body: |
-            Chrome++ 构建版本 ${{ env.BUILD_DATE }}
+            Chrome++ 构建版本
             
             Stable 版本: ${{ env.STABLE_VERSION }}
             Beta 版本: ${{ env.BETA_VERSION }}

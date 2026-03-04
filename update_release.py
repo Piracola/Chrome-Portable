@@ -59,6 +59,24 @@ def update_release_body(release_id, new_body):
         print(f"Failed to update release body: {resp.status_code} {resp.text}")
         return False
 
+def update_release_title_and_tag(release_id, new_title, new_tag):
+    repo = os.getenv('GITHUB_REPOSITORY')
+    url = f"https://api.github.com/repos/{repo}/releases/{release_id}"
+    headers = get_github_api_headers()
+    
+    data = {
+        'name': new_title,
+        'tag_name': new_tag
+    }
+    
+    resp = requests.patch(url, headers=headers, json=data)
+    if resp.status_code == 200:
+        print(f"Updated release {release_id} title to '{new_title}' and tag to '{new_tag}'")
+        return True
+    else:
+        print(f"Failed to update release title/tag: {resp.status_code} {resp.text}")
+        return False
+
 def generate_release_body(stable_version, beta_version):
     lines = [
         "Chrome++ 构建版本",
@@ -72,6 +90,7 @@ def main():
     release_id = os.getenv('RELEASE_ID')
     stable_update = os.getenv('STABLE_UPDATE', 'false').lower() == 'true'
     beta_update = os.getenv('BETA_UPDATE', 'false').lower() == 'true'
+    stable_minor_update = os.getenv('STABLE_MINOR_UPDATE', 'false').lower() == 'true'
     stable_version = os.getenv('STABLE_VERSION', '')
     beta_version = os.getenv('BETA_VERSION', '')
     upstream_stable = os.getenv('UPSTREAM_STABLE', '')
@@ -84,6 +103,7 @@ def main():
     print(f"Updating release {release_id}")
     print(f"Stable update: {stable_update}")
     print(f"Beta update: {beta_update}")
+    print(f"Stable minor update: {stable_minor_update}")
     
     if stable_update:
         print("Deleting old stable assets...")
@@ -98,6 +118,11 @@ def main():
     
     new_body = generate_release_body(final_stable, final_beta)
     update_release_body(release_id, new_body)
+    
+    if stable_minor_update and final_stable:
+        new_title = f"Chrome++ {final_stable}"
+        new_tag = f"v{final_stable}"
+        update_release_title_and_tag(release_id, new_title, new_tag)
     
     print("Release update completed.")
 

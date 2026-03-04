@@ -68,6 +68,15 @@ def is_major_version_update(new_version, old_version):
         return new_major != old_major
     return False
 
+def is_stable_minor_update(new_version, old_version):
+    if not new_version or not old_version:
+        return False
+    new_major = get_major_version(new_version)
+    old_major = get_major_version(old_version)
+    if new_major and old_major and new_major == old_major:
+        return new_version != old_version
+    return False
+
 def main():
     print("Checking for updates...")
     
@@ -123,6 +132,7 @@ def main():
     print(f"Beta update: {beta_update}")
     
     create_new_release = False
+    stable_minor_update = False
     if not release_id:
         create_new_release = True
         print("No existing release found. Will create new release.")
@@ -131,8 +141,12 @@ def main():
         print(f"Major version update detected: {latest_stable} -> {upstream_stable}. Will create new release.")
     else:
         print("Minor version update. Will update existing release.")
+        if stable_update and is_stable_minor_update(upstream_stable, latest_stable):
+            stable_minor_update = True
+            print(f"Stable minor version update detected: {latest_stable} -> {upstream_stable}. Will update release title.")
     
     print(f"Create new release: {create_new_release}")
+    print(f"Stable minor update: {stable_minor_update}")
     
     env_file = os.getenv('GITHUB_ENV')
     if env_file:
@@ -143,6 +157,7 @@ def main():
             f.write(f"UPSTREAM_STABLE={upstream_stable or ''}\n")
             f.write(f"UPSTREAM_BETA={upstream_beta or ''}\n")
             f.write(f"CREATE_NEW_RELEASE={str(create_new_release).lower()}\n")
+            f.write(f"STABLE_MINOR_UPDATE={str(stable_minor_update).lower()}\n")
             if release_id:
                 f.write(f"RELEASE_ID={release_id}\n")
             if release_tag:
