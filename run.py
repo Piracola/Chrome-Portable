@@ -130,29 +130,38 @@ def build_chrome(channel='win_stable_x64'):
         print(f"Warning: Directory version {detected_version} differs from manifest version {version}")
         version = detected_version # Trust the directory structure
 
-    # 6. 下载并解压 setdll 工具
-    print('Downloading setdll tool...')
-    setdll_url = 'https://github.com/Bush2021/chrome_plus/releases/latest/download/setdll.7z'
-    response = requests.get(setdll_url)
-    with open('setdll.7z', 'wb') as f:
-        f.write(response.content)
-
-    print('Extracting setdll tool...')
-    os.system(f'{seven_zip_path} x setdll.7z -osetdll_temp -y')
+    # 6. 从本地 chrome++ 目录获取 setdll 工具
+    CHROME_PLUS_DIR = "chrome++"
+    print(f'Using setdll from local directory: {CHROME_PLUS_DIR}...')
+    
+    if not os.path.exists(CHROME_PLUS_DIR):
+        print(f"Error: Local directory '{CHROME_PLUS_DIR}' not found.")
+        return
 
     # 7. 组装文件
-    print('Copying configuration and DLLs from setdll...')
-    if os.path.exists('chrome++.ini'):
+    print('Copying configuration and DLLs from local chrome++ directory...')
+    
+    ini_src = os.path.join(CHROME_PLUS_DIR, 'chrome++.ini')
+    if os.path.exists(ini_src):
+        shutil.copy(ini_src, os.path.join('Chrome-bin', 'chrome++.ini'))
+        print('chrome++.ini copied from chrome++ directory!')
+    elif os.path.exists('chrome++.ini'):
         shutil.copy('chrome++.ini', os.path.join('Chrome-bin', 'chrome++.ini'))
-        print('chrome++.ini copied from repository!')
+        print('chrome++.ini copied from repository root!')
     else:
-        print('Warning: chrome++.ini not found in repository!')
+        print('Warning: chrome++.ini not found!')
 
-    if os.path.exists(os.path.join('setdll_temp', 'version-x64.dll')):
-        shutil.copy(os.path.join('setdll_temp', 'version-x64.dll'), os.path.join('Chrome-bin', 'version.dll'))
+    version_dll_src = os.path.join(CHROME_PLUS_DIR, 'version-x64.dll')
+    if os.path.exists(version_dll_src):
+        shutil.copy(version_dll_src, os.path.join('Chrome-bin', 'version.dll'))
+    else:
+        print('Warning: version-x64.dll not found in chrome++ directory!')
 
-    if os.path.exists(os.path.join('setdll_temp', 'setdll-x64.exe')):
-        shutil.copy(os.path.join('setdll_temp', 'setdll-x64.exe'), os.path.join('Chrome-bin', 'setdll-x64.exe'))
+    setdll_exe_src = os.path.join(CHROME_PLUS_DIR, 'setdll-x64.exe')
+    if os.path.exists(setdll_exe_src):
+        shutil.copy(setdll_exe_src, os.path.join('Chrome-bin', 'setdll-x64.exe'))
+    else:
+        print('Warning: setdll-x64.exe not found in chrome++ directory!')
 
     if os.path.exists('Chrome'):
         shutil.rmtree('Chrome')
@@ -190,9 +199,6 @@ def build_chrome(channel='win_stable_x64'):
         print(f'Warning: setdll-x64.exe or chrome.exe not found. \nsetdll: {setdll_exe}\nchrome: {chrome_exe}')
 
     # 10. 清理临时文件
-    shutil.rmtree('setdll_temp', ignore_errors=True)
-    if os.path.exists('setdll.7z'):
-        os.remove('setdll.7z')
     if os.path.exists('chrome.7z.exe'):
         os.remove('chrome.7z.exe')
 
