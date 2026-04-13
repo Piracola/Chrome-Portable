@@ -1,6 +1,7 @@
 name: Chrome Portable Build
 
 on:
+  # 触发事件配置
   workflow_dispatch:
   push:
     branches: [ main ]
