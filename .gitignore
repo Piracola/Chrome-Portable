@@ -1,3 +1,4 @@
 .idea
 Pipfile.lock
 chrome_installer-main
+build/*

@@ -62,11 +62,13 @@ jobs:
           $version = Get-Content build/release/Chrome/version.txt
           echo "STABLE_VERSION=$version" >> $env:GITHUB_ENV
           Write-Host "[INFO] Stable version: $version"
-          $archiveName = "Chrome++_stable_${{ env.BUILD_DATE }}.7z"
+          $archiveName = "Chrome++_stable_${version}_${{ env.BUILD_DATE }}.7z"
           Push-Location build/release
           7z a -t7z -mx=9 "../assets/$archiveName" *
           Pop-Location
-          Write-Host "[INFO] Stable build completed: $archiveName"
+          Write-Host "[INFO] Stable build archive created: build/assets/$archiveName"
+          Write-Host "[INFO] Archive contents:"
+          Get-ChildItem build/assets -Name
 
       - name: Build Beta
         if: github.event_name != 'schedule' || env.BETA_UPDATE == 'true'
@@ -76,11 +78,13 @@ jobs:
           $version = Get-Content build/release/Chrome/version.txt
           echo "BETA_VERSION=$version" >> $env:GITHUB_ENV
           Write-Host "[INFO] Beta version: $version"
-          $archiveName = "Chrome++_beta_${{ env.BUILD_DATE }}.7z"
+          $archiveName = "Chrome++_beta_${version}_${{ env.BUILD_DATE }}.7z"
           Push-Location build/release
           7z a -t7z -mx=9 "../assets/$archiveName" *
           Pop-Location
-          Write-Host "[INFO] Beta build completed: $archiveName"
+          Write-Host "[INFO] Beta build archive created: build/assets/$archiveName"
+          Write-Host "[INFO] Archive contents:"
+          Get-ChildItem build/assets -Name
 
       - name: Debug Build Results
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push'
@@ -111,36 +115,7 @@ jobs:
           Write-Host "Release Tag: $env:RELEASE_TAG"
           Write-Host "================================================"
           python update_release.py
-          Write-Host "Extracting stable version for release title..."
-          $stableVer = $env:STABLE_VERSION
-          if (-not $stableVer) {
-            $stableVer = $env:UPSTREAM_STABLE
-          }
-          if ($stableVer) {
-            $releaseTitle = "Chrome++ $stableVer"
-            $releaseTag = "v$stableVer"
-            echo "RELEASE_TITLE=$releaseTitle" >> $env:GITHUB_ENV
-            echo "RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
-            Write-Host "Set RELEASE_TITLE=$releaseTitle"
-            Write-Host "Set RELEASE_TAG=$releaseTag"
-          } elseif ($env:RELEASE_TAG) {
-            $releaseTitle = $env:RELEASE_TITLE
-            if (-not $releaseTitle) {
-              $releaseTitle = "Chrome++ (updating...)"
-              echo "RELEASE_TITLE=$releaseTitle" >> $env:GITHUB_ENV
-            }
-            Write-Host "Using existing RELEASE_TITLE=$releaseTitle, RELEASE_TAG=$env:RELEASE_TAG"
-          } else {
-            Write-Host "[WARN] Could not determine stable version for title, using existing tag"
-            $releaseTag = $env:RELEASE_TAG
-            $releaseTitle = $env:RELEASE_TITLE
-            if (-not $releaseTitle) {
-              $releaseTitle = "Chrome++ ($releaseTag)"
-              echo "RELEASE_TITLE=$releaseTitle" >> $env:GITHUB_ENV
-            }
-            echo "RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
-            Write-Host "Fallback: RELEASE_TITLE=$releaseTitle, RELEASE_TAG=$releaseTag"
-          }
+          Write-Host "[INFO] Release update completed. Check logs for tag/title updates."
 
       - name: Upload Assets to Existing Release
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
@@ -169,14 +144,5 @@ jobs:
             Stable 版本: ${{ env.STABLE_VERSION || env.UPSTREAM_STABLE }}
             Beta 版本: ${{ env.BETA_VERSION || env.UPSTREAM_BETA }}
           files: build/assets/*.7z
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Delete Older Releases
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && env.UPDATE_NEEDED == 'true')
-        uses: dev-drprasad/delete-older-releases@v0.3.4
-        with:
-          keep_latest: 10
-          delete_tags: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
