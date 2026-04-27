@@ -12,6 +12,11 @@
 
 项目会同步构建Stable和Beta版本的Chrome最新版本,**不建议交替切换版本**,可能会导致数据读取错误、闪退等问题。
 
+## 相关项目
+
+- [ChromiumPortable](https://github.com/Piracola/ChromiumPortable)：Chromium 系便携版构建核心，提供可复用的自动构建、打包和发行流程。
+- [Edge_Portable](https://github.com/betacola/Edge_Portable)：同系列 Microsoft Edge 便携版子项目。
+
 ## 功能特性
 
 以下功能均可在`chrome++.ini`中修改：
