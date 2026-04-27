@@ -1,7 +1,6 @@
 name: Chrome Portable Build
 
 on:
-  # 触发事件配置
   workflow_dispatch:
   push:
     branches: [ main ]
@@ -16,88 +15,67 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Chrome repository
+        uses: actions/checkout@v4
+
+      - name: Checkout portable builder
+        uses: actions/checkout@v4
+        with:
+          repository: Piracola/ChromiumPortable
+          ref: v1.1
+          path: _portable_builder
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
+        shell: pwsh
         run: |
-          python -m pip install -r requirements.txt
-          New-Item -ItemType Directory -Force -Path build/assets
+          python -m pip install --upgrade pip
+          python -m pip install requests
+          New-Item -ItemType Directory -Force -Path build/assets | Out-Null
 
       - name: Check for updates
-        id: check_updates
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python check_versions.py
+          PYTHONPATH: _portable_builder
+        run: python -m portable_builder --config browser.json --target "chrome_stable,chrome_beta" --workdir . check-targets
 
-      - name: Debug Environment Variables
+      - name: Debug environment
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push'
+        shell: pwsh
         run: |
-          Write-Host "========== Environment Variables =========="
           Write-Host "UPDATE_NEEDED: $env:UPDATE_NEEDED"
           Write-Host "STABLE_UPDATE: $env:STABLE_UPDATE"
           Write-Host "BETA_UPDATE: $env:BETA_UPDATE"
           Write-Host "CREATE_NEW_RELEASE: $env:CREATE_NEW_RELEASE"
-          Write-Host "STABLE_MINOR_UPDATE: $env:STABLE_MINOR_UPDATE"
+          Write-Host "MINOR_UPDATE: $env:MINOR_UPDATE"
           Write-Host "UPSTREAM_STABLE: $env:UPSTREAM_STABLE"
           Write-Host "UPSTREAM_BETA: $env:UPSTREAM_BETA"
           Write-Host "RELEASE_ID: $env:RELEASE_ID"
           Write-Host "RELEASE_TAG: $env:RELEASE_TAG"
-          Write-Host "==========================================="
 
-      - name: Set Build Date
+      - name: Set build date
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
+        shell: pwsh
         run: |
           $date = Get-Date -Format 'yyyy-MM-dd'
-          echo "BUILD_DATE=$date" >> $env:GITHUB_ENV
+          "BUILD_DATE=$date" >> $env:GITHUB_ENV
 
-      - name: Build Stable
-        if: github.event_name != 'schedule' || env.STABLE_UPDATE == 'true'
-        run: |
-          Write-Host "[INFO] Starting Stable build..."
-          python run.py
-          $version = Get-Content build/release/Chrome/version.txt
-          echo "STABLE_VERSION=$version" >> $env:GITHUB_ENV
-          Write-Host "[INFO] Stable version: $version"
-          $archiveName = "Chrome++_stable_${version}_${{ env.BUILD_DATE }}.7z"
-          Push-Location build/release
-          7z a -t7z -mx=9 "../assets/$archiveName" *
-          Pop-Location
-          Write-Host "[INFO] Stable build archive created: build/assets/$archiveName"
-          Write-Host "[INFO] Archive contents:"
-          Get-ChildItem build/assets -Name
+      - name: Build updated channels
+        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
+        env:
+          PYTHONPATH: _portable_builder
+        run: python -m portable_builder --config browser.json --target "chrome_stable,chrome_beta" --workdir . build-targets
 
-      - name: Build Beta
-        if: github.event_name != 'schedule' || env.BETA_UPDATE == 'true'
-        run: |
-          Write-Host "[INFO] Starting Beta build..."
-          python run_beta.py
-          $version = Get-Content build/release/Chrome/version.txt
-          echo "BETA_VERSION=$version" >> $env:GITHUB_ENV
-          Write-Host "[INFO] Beta version: $version"
-          $archiveName = "Chrome++_beta_${version}_${{ env.BUILD_DATE }}.7z"
-          Push-Location build/release
-          7z a -t7z -mx=9 "../assets/$archiveName" *
-          Pop-Location
-          Write-Host "[INFO] Beta build archive created: build/assets/$archiveName"
-          Write-Host "[INFO] Archive contents:"
-          Get-ChildItem build/assets -Name
+      - name: Render release metadata
+        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
+        env:
+          PYTHONPATH: _portable_builder
+        run: python -m portable_builder --config browser.json --target "chrome_stable,chrome_beta" --workdir . render-release-targets
 
-      - name: Debug Build Results
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push'
-        run: |
-          Write-Host "========== Build Results =========="
-          Write-Host "STABLE_VERSION: $env:STABLE_VERSION"
-          Write-Host "BETA_VERSION: $env:BETA_VERSION"
-          Write-Host "BUILD_DATE: $env:BUILD_DATE"
-          Write-Host "==================================="
-          Write-Host "Assets in build/assets:"
-          Get-ChildItem build/assets -Name
-
-      - name: Upload Artifacts
+      - name: Upload artifacts
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         uses: actions/upload-artifact@v4
         with:
@@ -105,44 +83,31 @@ jobs:
           path: build/assets/*.7z
           retention-days: 15
 
-      - name: Update Existing Release
+      - name: Update existing release
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          Write-Host "========== Updating Existing Release =========="
-          Write-Host "Release ID: $env:RELEASE_ID"
-          Write-Host "Release Tag: $env:RELEASE_TAG"
-          Write-Host "================================================"
-          python update_release.py
-          Write-Host "[INFO] Release update completed. Check logs for tag/title updates."
+          PYTHONPATH: _portable_builder
+        run: python -m portable_builder --config browser.json --target "chrome_stable,chrome_beta" --workdir . update-release-targets
 
-      - name: Upload Assets to Existing Release
+      - name: Upload assets to existing release
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_TITLE }}
-          body: |
-            Chrome++ 构建版本
-
-            Stable 版本: ${{ env.STABLE_VERSION || env.UPSTREAM_STABLE }}
-            Beta 版本: ${{ env.BETA_VERSION || env.UPSTREAM_BETA }}
+          body_path: ${{ env.RELEASE_BODY_PATH }}
           files: build/assets/*.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create New Release
+      - name: Create new release
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ env.STABLE_VERSION || env.UPSTREAM_STABLE }}
-          name: Chrome++ ${{ env.STABLE_VERSION || env.UPSTREAM_STABLE }}
-          body: |
-            Chrome++ 构建版本
-
-            Stable 版本: ${{ env.STABLE_VERSION || env.UPSTREAM_STABLE }}
-            Beta 版本: ${{ env.BETA_VERSION || env.UPSTREAM_BETA }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TITLE }}
+          body_path: ${{ env.RELEASE_BODY_PATH }}
           files: build/assets/*.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

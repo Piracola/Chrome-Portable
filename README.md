@@ -41,9 +41,10 @@
 
 **本地构建**
 
-```bash
-pip install -r requirements.txt
-python run.py
+```powershell
+python -m pip install requests
+$env:PYTHONPATH="..\ChromiumPortable"
+python -m portable_builder --config browser.json --target chrome_stable --workdir . build
 ```
 
 ## 致谢

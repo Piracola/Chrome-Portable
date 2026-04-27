@@ -2,3 +2,6 @@
 Pipfile.lock
 chrome_installer-main
 build/*
+7zr.exe
+__pycache__/
+*.py[cod]
