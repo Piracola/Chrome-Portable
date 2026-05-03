@@ -4,15 +4,20 @@ chcp 65001 >nul
 set "APP_DIR=%~dp0Chrome"
 set "CHROME_EXE="
 
-:: 只遍历 Chrome 文件夹
-for /d %%d in ("%APP_DIR%*") do (
+if exist "%APP_DIR%\chrome.exe" (
+    set "CHROME_EXE=%APP_DIR%\chrome.exe"
+    goto :found
+)
+
+:: 兼容旧版：chrome.exe 在版本目录中
+for /d %%d in ("%APP_DIR%\*") do (
     if exist "%%d\chrome.exe" (
         set "CHROME_EXE=%%d\chrome.exe"
         goto :found
     )
 )
 
-echo 未找到版本目录中的 chrome.exe
+echo 未找到 chrome.exe
 pause
 exit /b 1
 

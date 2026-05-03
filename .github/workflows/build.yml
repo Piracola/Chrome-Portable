@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Piracola/ChromiumPortable
-          ref: v1.1
+          ref: v1.2
           path: _portable_builder
 
       - uses: actions/setup-python@v5

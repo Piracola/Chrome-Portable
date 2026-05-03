@@ -10,7 +10,7 @@
       "name": "Chrome",
       "display_name": "Chrome++",
       "output_dir": "Chrome",
-      "exe_name": "chrome.exe",
+      "exe_name": "..\\chrome.exe",
       "architecture": "x64",
       "env_prefix": "STABLE",
       "provider": {
@@ -33,7 +33,7 @@
       "name": "Chrome",
       "display_name": "Chrome++ Beta",
       "output_dir": "Chrome",
-      "exe_name": "chrome.exe",
+      "exe_name": "..\\chrome.exe",
       "architecture": "x64",
       "env_prefix": "BETA",
       "provider": {
