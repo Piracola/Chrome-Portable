@@ -29,6 +29,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Patch portable builder
+        shell: pwsh
+        run: python scripts/patch_portable_builder.py _portable_builder/portable_builder/builder.py
+
       - name: Install dependencies
         shell: pwsh
         run: |
@@ -68,6 +72,11 @@ jobs:
         env:
           PYTHONPATH: _portable_builder
         run: python -m portable_builder --config browser.json --target "chrome_stable,chrome_beta" --workdir . build-targets
+
+      - name: Verify portable imports
+        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
+        shell: pwsh
+        run: python scripts/verify_portable_imports.py --seven-zip .\7zr.exe build\assets\*.7z
 
       - name: Render release metadata
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
