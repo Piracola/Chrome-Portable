@@ -76,7 +76,7 @@ jobs:
       - name: Verify portable imports
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         shell: pwsh
-        run: python scripts/verify_portable_imports.py --seven-zip .\7zr.exe build\assets\*.7z
+        run: python scripts/verify_portable_imports.py build\assets\*.7z
 
       - name: Render release metadata
         if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
