@@ -92,7 +92,14 @@ def main():
     paths = []
     for raw_path in args.paths:
         matches = glob.glob(raw_path)
-        paths.extend(matches or [raw_path])
+        if matches:
+            paths.extend(matches)
+        else:
+            print(f"[INFO] No files matched: {raw_path}")
+
+    if not paths:
+        print("[INFO] No files to verify; skipping.")
+        return
 
     for raw_path in paths:
         path = Path(raw_path)
