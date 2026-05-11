@@ -2,20 +2,21 @@
 
 > 全自动构建的谷歌浏览器便携版，集成 Chrome++ 增强组件，提供纯净、高效的浏览体验。
 
-[!\[Build Status\](https://github.com/Piracola/Chrome-Portable/actions/workflows/build.yml/badge.svg null)](https://github.com/Piracola/Chrome-Portable/actions/workflows/build.yml)
+[![Build Status](https://github.com/Piracola/Chrome-Portable/actions/workflows/build.yml/badge.svg)](https://github.com/Piracola/Chrome-Portable/actions/workflows/build.yml)
+
+## 仓库导航
+
+- [ChromiumPortable（主仓库）](https://github.com/Piracola/ChromiumPortable)：通用构建核心仓库。
+- [Edge_Portable](https://github.com/betacola/Edge_Portable)：同系列 Microsoft Edge 便携版项目。
+- [Helium_Portable](https://github.com/Piracola/Helium_Portable)：同系列 Helium 便携版项目。
 
 ## 项目简介
 
-本项目全自动构建，每周定时从 Google 官方获取最新 Chrome 离线安装包，集成 Chrome++ 组件并封装为便携版。
+本项目全自动构建，每天定时检查 Google 官方是否有最新 Chrome 离线安装包更新，集成 Chrome++ 组件并封装为便携版。
 
 项目预配置了自定义增强功能，具体配置请查看`chrome++.ini`。
 
-项目会同步构建Stable和Beta版本的Chrome最新版本,**不建议交替切换版本**,可能会导致数据读取错误、闪退等问题。
-
-## 相关项目
-
-- [ChromiumPortable](https://github.com/Piracola/ChromiumPortable)：Chromium 系便携版构建核心，提供可复用的自动构建、打包和发行流程。
-- [Edge_Portable](https://github.com/betacola/Edge_Portable)：同系列 Microsoft Edge 便携版子项目。
+项目会同步构建Stable和Beta版本的Chrome最新版本,**不建议交替切换版本**,可能会导致数据读取错误、闪退、无法启动等问题。
 
 ## 功能特性
 
@@ -24,7 +25,8 @@
 - 所有用户数据及缓存均存储于程序同级目录的 `Data` 和 `Cache` 文件夹
 - 双击关闭标签页、保留最后一个标签页
 - 悬停标签栏时滚轮切换标签页，按住右键时滚轮滚动标签栏
-- 支持新建前台标签页打开书签或地址栏内容
+- 新建前台标签页打开书签或地址栏内容
+- 更多增强功能请查看`chrome++.ini`
 
 ## 快速开始
 
