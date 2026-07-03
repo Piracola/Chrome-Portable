@@ -2,6 +2,11 @@ name: Chrome Portable Build
 
 on:
   workflow_dispatch:
+    inputs:
+      builder_ref:
+        description: ChromiumPortable ref to use.
+        required: false
+        default: main
   push:
     branches: [ main ]
   pull_request:
@@ -12,6 +17,9 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    concurrency:
+      group: chrome-portable-build
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
@@ -22,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Piracola/ChromiumPortable
-          ref: main
+          ref: ${{ github.event.inputs.builder_ref || 'main' }}
           path: _portable_builder
 
       - uses: actions/setup-python@v5
