@@ -1,8 +1,17 @@
+<div align="center">
+
 # Chrome 便携版
 
-> 全自动构建的谷歌浏览器便携版，集成 Chrome++ 增强组件，提供纯净、高效的浏览体验。
+全自动构建的谷歌浏览器便携版，集成 Chrome++ 增强组件，提供纯净、高效的浏览体验。
 
-[![Build Status](https://github.com/Piracola/Chrome-Portable/actions/workflows/build.yml/badge.svg)](https://github.com/Piracola/Chrome-Portable/actions/workflows/build.yml)
+[![最新版本][badge-release]][link-release]
+[![总下载量][badge-downloads]][link-release]
+[![构建状态][badge-build]][link-actions]
+[![许可证][badge-license]][link-license]
+
+**[⬇ 下载最新版本][link-release]**
+
+</div>
 
 > 想了解构建系统或新增浏览器？见 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable)——本仓库仅是其构建配置之一。
 
@@ -79,3 +88,24 @@ python -m portable_builder --config browser.json --target chrome_stable --workdi
 - Chrome++ 组件版权归原作者所有
 
 本项目采用 GitHub Actions 每日自动检查更新，版本号与 Chrome 官方 Stable/Beta 分支保持一致。查看 [Releases](https://github.com/Piracola/Chrome-Portable/releases) 获取历史版本。
+
+---
+
+<div align="center">
+
+<sub>Built and maintained by</sub>
+
+**Piracola**
+
+</div>
+
+<!-- 徽标定义：中文标签需 percent-encode，否则 shields.io 无法解析。 -->
+<!-- 修改标签文字时请一并更新编码，例如 最新版本 -> %E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC -->
+[badge-release]: https://img.shields.io/github/v/release/Piracola/Chrome-Portable?display_name=tag&style=flat-square&color=d8653f&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC
+[badge-downloads]: https://img.shields.io/github/downloads/Piracola/Chrome-Portable/total?style=flat-square&color=2ea043&label=%E6%80%BB%E4%B8%8B%E8%BD%BD%E9%87%8F
+[badge-build]: https://img.shields.io/github/actions/workflow/status/Piracola/Chrome-Portable/build.yml?branch=main&style=flat-square&label=%E6%9E%84%E5%BB%BA%E7%8A%B6%E6%80%81
+[badge-license]: https://img.shields.io/github/license/Piracola/Chrome-Portable?style=flat-square&color=6e7681&label=%E8%AE%B8%E5%8F%AF%E8%AF%81
+
+[link-release]: https://github.com/Piracola/Chrome-Portable/releases/latest
+[link-actions]: https://github.com/Piracola/Chrome-Portable/actions/workflows/build.yml
+[link-license]: https://github.com/Piracola/Chrome-Portable/blob/main/LICENSE
