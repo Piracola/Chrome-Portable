@@ -57,7 +57,17 @@ def decode_response(text):
             urls.append(codebase + package_name)
     if not urls:
         raise RuntimeError("Google update response did not include download URLs.")
-    return manifest.get("version"), package_name, urls
+
+    size = package.get("size")
+    return {
+        "version": manifest.get("version"),
+        "file_name": package_name,
+        "urls": urls,
+        # Omaha publishes the installer digest next to the download URL; the
+        # builder verifies the download against it.
+        "sha256": package.get("hash_sha256"),
+        "size": int(size) if size and str(size).isdigit() else None,
+    }
 
 
 def main():
@@ -66,17 +76,22 @@ def main():
     args = parser.parse_args()
 
     config = CHANNELS[args.channel]
-    version, file_name, urls = decode_response(post_update(config["os"], config["app"]))
-    download_url = urls[0]
-    for url in urls:
+    package = decode_response(post_update(config["os"], config["app"]))
+    download_url = package["urls"][0]
+    for url in package["urls"]:
         if url.startswith("https://dl.google.com"):
             download_url = url
             break
 
+    if not package["sha256"]:
+        raise RuntimeError("Google update response did not include hash_sha256; refusing to publish an unverifiable download.")
+
     print(json.dumps({
-        "version": version,
+        "version": package["version"],
         "url": download_url,
-        "file_name": file_name or "chrome_installer.exe",
+        "file_name": package["file_name"] or "chrome_installer.exe",
+        "sha256": package["sha256"],
+        "size": package["size"],
         "verify_ssl": True
     }))
 

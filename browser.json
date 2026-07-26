@@ -3,7 +3,7 @@
     "tag_target": "chrome_stable",
     "tag": "v{chrome_stable_version}",
     "title": "Chrome++ {chrome_stable_version}",
-    "body": "Chrome++ 构建版本\n\n构建时间: {date}\nStable 版本: {chrome_stable_version}\nBeta 版本: {chrome_beta_version}\n"
+    "body": "自动构建的 Google Chrome 便携版，集成 Chrome++ 便携化增强组件。\n\n## 版本\n- Stable 版本: {chrome_stable_version}\n- Beta 版本: {chrome_beta_version}\n\n## 使用说明\n- 解压到任意目录，双击 `开始.bat` 创建桌面快捷方式。\n- 用户数据保存在与 `Chrome` 文件夹同级的 `Data`、`Cache` 目录，随目录整体移动。\n- 更新时只覆盖 `Chrome` 文件夹即可，`Data` 与 `Cache` 不受影响。\n\n## 文件校验\n| 文件 | 大小 | SHA256 |\n| --- | --- | --- |\n| `{chrome_stable_archive}` | {chrome_stable_size} | `{chrome_stable_sha256}` |\n| `{chrome_beta_archive}` | {chrome_beta_size} | `{chrome_beta_sha256}` |\n\n## 构建信息\n- 构建时间: {date}\n- Chrome++ 版本: {chrome_plus_version}\n- 构建记录: {run_url}\n- 上游发行说明: https://chromereleases.googleblog.com/\n"
   },
   "targets": {
     "chrome_stable": {
@@ -15,7 +15,12 @@
       "env_prefix": "STABLE",
       "provider": {
         "type": "script",
-        "command": ["python", "scripts/chrome_package.py", "--channel", "stable"]
+        "command": [
+          "python",
+          "scripts/chrome_package.py",
+          "--channel",
+          "stable"
+        ]
       },
       "version_root": "Chrome-bin",
       "layout": "move_version_root",
@@ -38,7 +43,12 @@
       "env_prefix": "BETA",
       "provider": {
         "type": "script",
-        "command": ["python", "scripts/chrome_package.py", "--channel", "beta"]
+        "command": [
+          "python",
+          "scripts/chrome_package.py",
+          "--channel",
+          "beta"
+        ]
       },
       "version_root": "Chrome-bin",
       "layout": "move_version_root",

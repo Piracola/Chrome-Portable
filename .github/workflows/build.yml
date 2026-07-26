@@ -14,8 +14,61 @@ on:
   schedule:
     - cron: "0 8 * * *"
 
+env:
+  TARGETS: chrome_stable,chrome_beta
+
 jobs:
+  # Version discovery is pure HTTP and needs no Windows, so the Windows runner
+  # is only spun up when there is actually something to build.
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      update_needed: ${{ steps.check.outputs.UPDATE_NEEDED }}
+      env_json: ${{ steps.check.outputs.env_json }}
+    steps:
+      - name: Checkout Chrome repository
+        uses: actions/checkout@v4
+
+      - name: Checkout portable builder
+        uses: actions/checkout@v4
+        with:
+          repository: Piracola/ChromiumPortable
+          ref: ${{ github.event.inputs.builder_ref || 'main' }}
+          path: _portable_builder
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install requests
+
+      - name: Check for updates
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONPATH: _portable_builder
+        run: python -m portable_builder --config browser.json --target "$TARGETS" --workdir . check-targets
+
+      - name: Summarize
+        shell: bash
+        run: |
+          echo "UPDATE_NEEDED=${{ steps.check.outputs.UPDATE_NEEDED }}"
+          echo "STABLE_UPDATE=${{ steps.check.outputs.STABLE_UPDATE }} (${{ steps.check.outputs.UPSTREAM_STABLE }})"
+          echo "BETA_UPDATE=${{ steps.check.outputs.BETA_UPDATE }} (${{ steps.check.outputs.UPSTREAM_BETA }})"
+          echo "CREATE_NEW_RELEASE=${{ steps.check.outputs.CREATE_NEW_RELEASE }}"
+          echo "MINOR_UPDATE=${{ steps.check.outputs.MINOR_UPDATE }}"
+          echo "RELEASE_ID=${{ steps.check.outputs.RELEASE_ID }}"
+          echo "RELEASE_TAG=${{ steps.check.outputs.RELEASE_TAG }}"
+
   build:
+    needs: check
+    if: github.event_name != 'schedule' || needs.check.outputs.update_needed == 'true'
     runs-on: windows-latest
     concurrency:
       group: chrome-portable-build
@@ -37,10 +90,6 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Patch portable builder
-        shell: pwsh
-        run: python scripts/patch_portable_builder.py _portable_builder/portable_builder/builder.py
-
       - name: Install dependencies
         shell: pwsh
         run: |
@@ -48,52 +97,39 @@ jobs:
           python -m pip install requests
           New-Item -ItemType Directory -Force -Path build/assets | Out-Null
 
-      - name: Check for updates
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PYTHONPATH: _portable_builder
-        run: python -m portable_builder --config browser.json --target "chrome_stable,chrome_beta" --workdir . check-targets
-
-      - name: Debug environment
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push'
+      - name: Restore check results
         shell: pwsh
+        env:
+          CHECK_ENV: ${{ needs.check.outputs.env_json }}
         run: |
-          Write-Host "UPDATE_NEEDED: $env:UPDATE_NEEDED"
-          Write-Host "STABLE_UPDATE: $env:STABLE_UPDATE"
-          Write-Host "BETA_UPDATE: $env:BETA_UPDATE"
-          Write-Host "CREATE_NEW_RELEASE: $env:CREATE_NEW_RELEASE"
-          Write-Host "MINOR_UPDATE: $env:MINOR_UPDATE"
-          Write-Host "UPSTREAM_STABLE: $env:UPSTREAM_STABLE"
-          Write-Host "UPSTREAM_BETA: $env:UPSTREAM_BETA"
-          Write-Host "RELEASE_ID: $env:RELEASE_ID"
-          Write-Host "RELEASE_TAG: $env:RELEASE_TAG"
+          if (-not $env:CHECK_ENV) { throw "The check job produced no environment payload." }
+          foreach ($property in ($env:CHECK_ENV | ConvertFrom-Json).PSObject.Properties) {
+            "$($property.Name)=$($property.Value)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            Write-Host "$($property.Name)=$($property.Value)"
+          }
 
       - name: Set build date
-        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         shell: pwsh
         run: |
           $date = Get-Date -Format 'yyyy-MM-dd'
           "BUILD_DATE=$date" >> $env:GITHUB_ENV
 
       - name: Build updated channels
-        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         env:
           PYTHONPATH: _portable_builder
-        run: python -m portable_builder --config browser.json --target "chrome_stable,chrome_beta" --workdir . build-targets
+        run: python -m portable_builder --config browser.json --target "$env:TARGETS" --workdir . build-targets
 
-      - name: Verify portable imports
-        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
-        shell: pwsh
-        run: python scripts/verify_portable_imports.py build\assets\*.7z
+      - name: Verify archives
+        env:
+          PYTHONPATH: _portable_builder
+        run: python -m portable_builder --config browser.json --target "$env:TARGETS" --workdir . verify-targets
 
       - name: Render release metadata
-        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         env:
           PYTHONPATH: _portable_builder
-        run: python -m portable_builder --config browser.json --target "chrome_stable,chrome_beta" --workdir . render-release-targets
+        run: python -m portable_builder --config browser.json --target "$env:TARGETS" --workdir . render-release-targets
 
       - name: Upload artifacts
-        if: github.event_name != 'schedule' || env.UPDATE_NEEDED == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Chrome-Portable-Builds
@@ -105,7 +141,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHONPATH: _portable_builder
-        run: python -m portable_builder --config browser.json --target "chrome_stable,chrome_beta" --workdir . update-release-targets
+        run: python -m portable_builder --config browser.json --target "$env:TARGETS" --workdir . update-release-targets
 
       - name: Upload assets to existing release
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
