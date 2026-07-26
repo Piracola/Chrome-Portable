@@ -9,7 +9,7 @@
 [![构建状态][badge-build]][link-actions]
 [![许可证][badge-license]][link-license]
 
-**[⬇ 下载最新版本][link-release]**
+**[⬇ 下载最新版本][link-release]** · **[📖 使用说明与常见问题][link-site]**
 
 </div>
 
@@ -17,6 +17,7 @@
 
 ## 仓库导航
 
+- [Chrome 便携版下载页](https://piracola.github.io/ChromiumPortable/chrome/)：安装、更新、校验与常见问题的完整说明。
 - [ChromiumPortable（主仓库/构建核心）](https://github.com/Piracola/ChromiumPortable)：通用构建核心仓库。
 - [Edge_Portable](https://github.com/betacola/Edge_Portable)：同系列 Microsoft Edge 便携版项目。
 - [Helium_Portable](https://github.com/Piracola/Helium_Portable)：同系列 Helium 便携版项目。
@@ -107,5 +108,6 @@ python -m portable_builder --config browser.json --target chrome_stable --workdi
 [badge-license]: https://img.shields.io/github/license/Piracola/Chrome-Portable?style=flat-square&color=6e7681&label=%E8%AE%B8%E5%8F%AF%E8%AF%81
 
 [link-release]: https://github.com/Piracola/Chrome-Portable/releases/latest
+[link-site]: https://piracola.github.io/ChromiumPortable/chrome/
 [link-actions]: https://github.com/Piracola/Chrome-Portable/actions/workflows/build.yml
 [link-license]: https://github.com/Piracola/Chrome-Portable/blob/main/LICENSE
