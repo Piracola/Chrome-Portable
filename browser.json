@@ -27,6 +27,11 @@
       "chrome_plus_dir": "chrome++",
       "ini_location": "app_root",
       "version_dll_location": "app_root",
+      "forbidden_file_names": [
+        "GoogleUpdate.exe",
+        "GoogleUpdater.exe",
+        "updater.exe"
+      ],
       "start_script": "开始.bat",
       "archive_name": "Chrome++_stable_{version}_{date}.7z",
       "release": {
@@ -55,6 +60,11 @@
       "chrome_plus_dir": "chrome++",
       "ini_location": "app_root",
       "version_dll_location": "app_root",
+      "forbidden_file_names": [
+        "GoogleUpdate.exe",
+        "GoogleUpdater.exe",
+        "updater.exe"
+      ],
       "start_script": "开始.bat",
       "archive_name": "Chrome++_beta_{version}_{date}.7z",
       "release": {

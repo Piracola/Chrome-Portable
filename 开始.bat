@@ -22,7 +22,7 @@ pause
 exit /b 1
 
 :found
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$s=New-Object -ComObject WScript.Shell; $l=$s.CreateShortcut('%~dp0Chrome.lnk'); $l.TargetPath='%CHROME_EXE%'; $l.Arguments='--disable-background-networking'; $l.WorkingDirectory='%~dp0'; $l.IconLocation='%CHROME_EXE%,0'; $l.Save()"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$s=New-Object -ComObject WScript.Shell; $l=$s.CreateShortcut('%~dp0Chrome.lnk'); $l.TargetPath='%CHROME_EXE%'; $l.Arguments=''; $l.WorkingDirectory='%~dp0'; $l.IconLocation='%CHROME_EXE%,0'; $l.Save()"
 
 if exist "%~dp0Chrome.lnk" (
     echo 快捷方式创建成功
