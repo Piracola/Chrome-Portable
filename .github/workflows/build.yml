@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       builder_ref:
-        description: ChromiumPortable ref to use.
+        description: ChromiumPortable engine release tag.
         required: false
-        default: main
+        default: v2
   push:
     branches: [ main ]
   pull_request:
@@ -16,10 +16,12 @@ on:
 
 env:
   TARGETS: chrome_stable,chrome_beta
+  BUILDER_REF: ${{ github.event.inputs.builder_ref || 'v2' }}
 
 jobs:
-  # Version discovery is pure HTTP and needs no Windows, so the Windows runner
-  # is only spun up when there is actually something to build.
+  # 版本发现只是几个 HTTP 请求，用不到 Windows；check 确认有活干之后
+  # Windows runner 才启动。引擎从 ChromiumPortable 的 Release 下载，
+  # 不再 checkout 构建器仓库、不再装 Python。
   check:
     runs-on: ubuntu-latest
     permissions:
@@ -31,29 +33,24 @@ jobs:
       - name: Checkout Chrome repository
         uses: actions/checkout@v4
 
-      - name: Checkout portable builder
-        uses: actions/checkout@v4
-        with:
-          repository: Piracola/ChromiumPortable
-          ref: ${{ github.event.inputs.builder_ref || 'main' }}
-          path: _portable_builder
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
+      - name: Download engine bundle
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install requests
+          gh release download "$BUILDER_REF" \
+            --repo Piracola/ChromiumPortable \
+            --pattern 'portable-builder-linux-x64.zip*' \
+            --dir _engine
+          (cd _engine && sha256sum -c portable-builder-linux-x64.zip.sha256)
+          unzip -q _engine/portable-builder-linux-x64.zip -d _engine
+          chmod +x _engine/portable-builder-linux-x64/portable-builder
 
       - name: Check for updates
         id: check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PYTHONPATH: _portable_builder
-        run: python -m portable_builder --config browser.json --target "$TARGETS" --workdir . check-targets
+        run: _engine/portable-builder-linux-x64/portable-builder --config browser.json --workdir . check-targets "$TARGETS"
 
       - name: Summarize
         shell: bash
@@ -79,23 +76,21 @@ jobs:
       - name: Checkout Chrome repository
         uses: actions/checkout@v4
 
-      - name: Checkout portable builder
-        uses: actions/checkout@v4
-        with:
-          repository: Piracola/ChromiumPortable
-          ref: ${{ github.event.inputs.builder_ref || 'main' }}
-          path: _portable_builder
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
+      - name: Download engine bundle
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install requests
+          gh release download "$env:BUILDER_REF" --repo Piracola/ChromiumPortable --pattern 'portable-builder-windows-x64.zip*' --dir _engine
+          $zip = Get-ChildItem _engine/*.zip | Select-Object -First 1
+          $expected = ((Get-Content "$($zip.FullName).sha256") -split '\s+')[0].ToLower()
+          $actual = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw "engine bundle sha256 mismatch" }
+          Expand-Archive $zip.FullName -DestinationPath _engine -Force
           New-Item -ItemType Directory -Force -Path build/assets | Out-Null
+          $exe = (Resolve-Path '_engine/portable-builder-windows-x64/portable-builder.exe').Path
+          "CPB_ENGINE=$exe" >> $env:GITHUB_ENV
+          Write-Host "CPB_ENGINE=$exe"
 
       - name: Restore check results
         shell: pwsh
@@ -115,19 +110,16 @@ jobs:
           "BUILD_DATE=$date" >> $env:GITHUB_ENV
 
       - name: Build updated channels
-        env:
-          PYTHONPATH: _portable_builder
-        run: python -m portable_builder --config browser.json --target "$env:TARGETS" --workdir . build-targets
+        run: |
+          & $env:CPB_ENGINE --config browser.json --workdir . build-targets "$env:TARGETS"
 
       - name: Verify archives
-        env:
-          PYTHONPATH: _portable_builder
-        run: python -m portable_builder --config browser.json --target "$env:TARGETS" --workdir . verify-targets
+        run: |
+          & $env:CPB_ENGINE --config browser.json --workdir . verify-targets
 
       - name: Render release metadata
-        env:
-          PYTHONPATH: _portable_builder
-        run: python -m portable_builder --config browser.json --target "$env:TARGETS" --workdir . render-release-targets
+        run: |
+          & $env:CPB_ENGINE --config browser.json --workdir . render-release-targets "$env:TARGETS"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -140,8 +132,8 @@ jobs:
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PYTHONPATH: _portable_builder
-        run: python -m portable_builder --config browser.json --target "$env:TARGETS" --workdir . update-release-targets
+        run: |
+          & $env:CPB_ENGINE --config browser.json --workdir . update-release-targets "$env:TARGETS"
 
       - name: Upload assets to existing release
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
