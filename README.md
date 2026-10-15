@@ -24,7 +24,20 @@
 
 ## 项目简介
 
-本项目由 GitHub Actions 每日自动检查 Google 官方是否有最新 Chrome 离线安装包更新，集成 Chrome++ 组件并封装为便携版。项目同时构建 Stable 与 Beta 两个渠道，发布在同一个 GitHub Release 下。增强功能默认配置见 `chrome++.ini`。
+本项目由 GitHub Actions 每日自动检查 Google 官方是否有最新 Chrome 离线安装包更新，集成 Chrome++ 组件并封装为便携版。项目同时构建 Stable 与 Beta 两个渠道，发布在同一个 GitHub Release 下。
+
+## 快速开始
+
+1. 从 [Releases](https://github.com/Piracola/Chrome-Portable/releases/latest) 下载压缩包（`Chrome++_stable_...7z` 为正式版，`Chrome++_beta_...7z` 为测试版），解压到任意位置
+2. 运行 `开始.bat` 创建桌面快捷方式，之后从快捷方式启动
+
+> ⚠️ Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退或无法启动。
+
+## 更新
+
+1. 关闭浏览器
+2. 删除 `Chrome` 文件夹或重命名为 `Chrome old` 以便于回退版本
+3. 解压新版压缩包内的 `Chrome` 文件夹（`Data`、`Cache` 保持不动）
 
 ## 功能特性
 
@@ -39,65 +52,34 @@
 - 发布包不携带 Google Update / Google Updater，因此不会自行替换整套浏览器；扩展和安全组件更新保持可用
 - 更多增强功能请查看 `chrome++.ini`
 
-## 快速开始
+## 更改数据目录位置
 
-**安装**
+数据目录的位置由 `Chrome\chrome++.ini` 里的 `data_dir` 和 `cache_dir` 两行决定，默认值是 `%app%\..\Data` 和 `%app%\..\Cache`（`%app%` 代表 `chrome.exe` 所在目录，所以默认落在 `Chrome` 文件夹旁边）。值支持绝对路径，目录会自动创建。注意这个文件是 **UTF-16 编码**（记事本另存时选「Unicode」）。
 
-1. 下载：访问 [Releases](https://github.com/Piracola/Chrome-Portable/releases/latest) 获取最新版本
-2. 选择渠道：`Chrome++_stable_...7z` 为正式版（推荐），`Chrome++_beta_...7z` 为测试版
-3. 解压：将压缩包解压至任意位置
-4. 运行 `开始.bat` 文件创建快捷方式
+默认路径本就跟着程序走，整个文件夹搬动不需要改，只有想把数据放到程序外（比如另一个分区）时才需要动它。
 
-> ⚠️ Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退或无法启动。
+## 卸载
 
-**更新**
+删除解压根目录即可，便携版不写注册表。
 
-1. 关闭浏览器。
-2. 备份与旧版 `Chrome` 文件夹同级的 `Data` 目录（复制到安全位置）。
-3. 删除旧版 `Chrome` 文件夹（或重命名为 `Chrome old` 以便回退版本）。
-4. 解压新版 `Chrome` 文件夹到同级目录。
-5. 把备份的 `Data` 放回新版 `Chrome` 文件夹旁边。
+## 本地构建
 
-> 想保留旧版以便回退：把旧文件夹改名为 `Chrome old`，新版解压到同级即可；回退时同理。
-
-**更改数据目录位置**
-
-数据目录的位置由 `Chrome\chrome++.ini` 里的 `data_dir` 和 `cache_dir` 两行决定，默认值是 `%app%\..\Data` 和 `%app%\..\Cache`（`%app%` 代表 `chrome.exe` 所在目录，所以默认落在 `Chrome` 文件夹旁边）。想放到别的位置，改这两行后重启浏览器即可，目录会自动创建。
-
-值既可以写绝对路径（如 `data_dir=D:\BrowserData`），也可以用 `%app%` 加相对层数。要注意这个文件是 **UTF-16 编码**，用记事本编辑后另存时请把编码选成「Unicode」，否则浏览器读不到配置、设置会静默失效。
-
-默认路径本来就会跟着程序走，整个文件夹一起搬动不需要改这里；只有想把数据放到程序外面（比如放在空间更大的分区）时才需要改。
-
-**卸载**
-
-删除 `Chrome` 文件夹即可完成卸载（便携，不写注册表）。
-
-**本地构建**（Windows + Python 3，需将 `ChromiumPortable` 检出到同级目录）
-
-```powershell
-python -m pip install requests
-$env:PYTHONPATH="..\ChromiumPortable"
-python -m portable_builder --config browser.json --target chrome_stable --workdir . build
-# 构建 Beta 版：将 --target 改为 chrome_beta
-```
+本地构建由主仓库的图形构建器完成，见 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable)。
 
 ## 致谢
 
 本项目基于以下优秀开源项目构建：
 
-| 项目                                                               | 说明                                         |
-| ---------------------------------------------------------------- | ------------------------------------------ |
+| 项目 | 说明 |
+| --- | --- |
 | [Bush2021/chrome\_plus](https://github.com/Bush2021/chrome_plus) | 提供核心便携化组件（Chrome++ / version.dll / setdll） |
-| Google Omaha update2 API                                         | Chrome 官方版本查询与安装包下载                        |
+| Google Omaha update2 API | Chrome 官方版本查询与安装包下载 |
 
 ## 许可证
 
 本项目源码遵循 MIT 许可证。
 
 - Google Chrome 浏览器版权归 Google 所有
-- Chrome++ 组件版权归原作者所有
-
-本项目采用 GitHub Actions 每日自动检查更新，版本号与 Chrome 官方 Stable/Beta 分支保持一致。查看 [Releases](https://github.com/Piracola/Chrome-Portable/releases) 获取历史版本。
 
 ---
 
