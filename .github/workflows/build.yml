@@ -118,6 +118,8 @@ jobs:
           & $env:CPB_ENGINE --config browser.json --workdir . verify-targets
 
       - name: Render release metadata
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           & $env:CPB_ENGINE --config browser.json --workdir . render-release-targets "$env:TARGETS"
 
