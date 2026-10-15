@@ -14,13 +14,8 @@
       "architecture": "x64",
       "env_prefix": "STABLE",
       "provider": {
-        "type": "script",
-        "command": [
-          "python",
-          "scripts/chrome_package.py",
-          "--channel",
-          "stable"
-        ]
+        "type": "google_omaha",
+        "channel": "win_stable_x64"
       },
       "version_root": "Chrome-bin",
       "layout": "move_version_root",
@@ -47,13 +42,8 @@
       "architecture": "x64",
       "env_prefix": "BETA",
       "provider": {
-        "type": "script",
-        "command": [
-          "python",
-          "scripts/chrome_package.py",
-          "--channel",
-          "beta"
-        ]
+        "type": "google_omaha",
+        "channel": "win_beta_x64"
       },
       "version_root": "Chrome-bin",
       "layout": "move_version_root",
