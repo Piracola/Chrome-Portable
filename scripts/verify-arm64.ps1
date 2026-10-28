@@ -19,7 +19,14 @@ function Get-PeMachine([string] $Path) {
 foreach ($channel in @('stable', 'beta')) {
     $archive = Get-ChildItem "build/assets/Chrome++_${channel}_arm64_*.7z" |
         Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if (-not $archive) { throw "Missing ARM64 $channel archive" }
+    if (-not $archive) {
+        $update = [Environment]::GetEnvironmentVariable("$($channel.ToUpperInvariant())_ARM64_UPDATE")
+        if ($env:GITHUB_EVENT_NAME -ne 'workflow_dispatch' -and $update -ieq 'false') {
+            Write-Host "Skipping unchanged ARM64 $channel channel (no archive in this run)."
+            continue
+        }
+        throw "Missing ARM64 $channel archive"
+    }
     $destination = Join-Path 'build/pe-check' ([guid]::NewGuid().ToString('N'))
     & 7z x $archive.FullName "-o$destination" 'Chrome/chrome.exe' 'Chrome/version.dll' -y
     if ($LASTEXITCODE -ne 0) { throw "PE extraction failed: $($archive.Name)" }
