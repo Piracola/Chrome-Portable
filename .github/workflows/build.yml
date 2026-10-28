@@ -15,7 +15,7 @@ on:
     - cron: "0 8 * * *"
 
 env:
-  TARGETS: chrome_stable,chrome_beta
+  TARGETS: chrome_stable,chrome_beta,chrome_stable_arm64,chrome_beta_arm64
   BUILDER_REF: ${{ github.event.inputs.builder_ref || 'v2' }}
 
 jobs:
@@ -32,6 +32,9 @@ jobs:
     steps:
       - name: Checkout Chrome repository
         uses: actions/checkout@v7
+
+      - name: Test target configuration
+        run: node scripts/test-config.cjs
 
       - name: Download engine bundle
         shell: bash
@@ -58,6 +61,8 @@ jobs:
           echo "UPDATE_NEEDED=${{ steps.check.outputs.UPDATE_NEEDED }}"
           echo "STABLE_UPDATE=${{ steps.check.outputs.STABLE_UPDATE }} (${{ steps.check.outputs.UPSTREAM_STABLE }})"
           echo "BETA_UPDATE=${{ steps.check.outputs.BETA_UPDATE }} (${{ steps.check.outputs.UPSTREAM_BETA }})"
+          echo "STABLE_ARM64_UPDATE=${{ steps.check.outputs.STABLE_ARM64_UPDATE }} (${{ steps.check.outputs.UPSTREAM_STABLE_ARM64 }})"
+          echo "BETA_ARM64_UPDATE=${{ steps.check.outputs.BETA_ARM64_UPDATE }} (${{ steps.check.outputs.UPSTREAM_BETA_ARM64 }})"
           echo "CREATE_NEW_RELEASE=${{ steps.check.outputs.CREATE_NEW_RELEASE }}"
           echo "MINOR_UPDATE=${{ steps.check.outputs.MINOR_UPDATE }}"
           echo "RELEASE_ID=${{ steps.check.outputs.RELEASE_ID }}"
@@ -87,6 +92,20 @@ jobs:
           $actual = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
           if ($actual -ne $expected) { throw "engine bundle sha256 mismatch" }
           Expand-Archive $zip.FullName -DestinationPath _engine -Force
+          # The engine bundle only contains x64 Chrome++ components. Pin one
+          # upstream release for both DLLs; use the host-native x64 setdll tool
+          # to patch both x64 and ARM64 PE files without running ARM64 code.
+          $chromePlusVersion = '1.18.3'
+          $chromePlusSha256 = '07a0dbd78062fdfbeff8806de7ea42e983c287367bd998abec070d600dfaf3f6'
+          $chromePlusArchive = '_engine/chrome-plus-setdll.7z'
+          Invoke-WebRequest "https://github.com/Bush2021/chrome_plus/releases/download/$chromePlusVersion/setdll.7z" -OutFile $chromePlusArchive
+          if ((Get-FileHash $chromePlusArchive -Algorithm SHA256).Hash.ToLower() -ne $chromePlusSha256) {
+            throw 'Chrome++ component archive sha256 mismatch'
+          }
+          $componentDir = '_engine/portable-builder-windows-x64/setdll'
+          & 7z x $chromePlusArchive "-o$componentDir" -y
+          if ($LASTEXITCODE -ne 0) { throw 'Chrome++ component extraction failed' }
+          Set-Content "$componentDir/version.txt" $chromePlusVersion -Encoding utf8NoBOM
           New-Item -ItemType Directory -Force -Path build/assets | Out-Null
           $exe = (Resolve-Path '_engine/portable-builder-windows-x64/portable-builder.exe').Path
           "CPB_ENGINE=$exe" >> $env:GITHUB_ENV
@@ -113,9 +132,16 @@ jobs:
         run: |
           & $env:CPB_ENGINE --config browser.json --workdir . build-targets "$env:TARGETS"
 
-      - name: Verify archives
+      - name: Verify x64 archives and smoke test
         run: |
-          & $env:CPB_ENGINE --config browser.json --workdir . verify-targets
+          & $env:CPB_ENGINE --config browser.json --target 'chrome_stable,chrome_beta' --workdir . verify-targets
+          if ($LASTEXITCODE -ne 0) { throw 'x64 archive verification failed' }
+
+      - name: Verify ARM64 archives without launching on x64
+        run: |
+          & $env:CPB_ENGINE --config browser.json --target 'chrome_stable_arm64,chrome_beta_arm64' --workdir . verify-targets --no-smoke
+          if ($LASTEXITCODE -ne 0) { throw 'ARM64 archive verification failed' }
+          ./scripts/verify-arm64.ps1
 
       - name: Render release metadata
         env:
