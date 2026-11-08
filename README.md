@@ -2,51 +2,35 @@
 
 # Chrome 便携版
 
-全自动构建的谷歌浏览器便携版，集成 Chrome++ 增强组件，提供纯净、高效的浏览体验。
+集成 Chrome++ 的 Google Chrome 便携版，由 GitHub Actions 自动构建，提供 Stable 与 Beta 渠道。
 
 [![最新版本][badge-release]][link-release]
 [![总下载量][badge-downloads]][link-release]
 [![构建状态][badge-build]][link-actions]
 [![许可证][badge-license]][link-license]
 
-**[⬇ 下载最新版本][link-release]** · **[📖 使用说明与常见问题][link-site]**
+**[⬇ 下载最新版本][link-release]** · **[📖 使用说明与常见问题][link-site]** · [更多设置与构建细节](docs/DETAILS.md)
 
 </div>
 
-> 想了解构建系统或新增浏览器？见 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable)——本仓库仅是其构建配置之一。
-
-## 仓库导航
-
-- [Chrome 便携版下载页](https://piracola.github.io/ChromiumPortable/chrome/)：安装、更新、校验与常见问题的完整说明。
-- [ChromiumPortable（主仓库/构建核心）](https://github.com/Piracola/ChromiumPortable)：通用构建核心仓库。
-- [Edge_Portable](https://github.com/Piracola/Edge_Portable)：同系列 Microsoft Edge 便携版项目。
-- [Helium_Portable](https://github.com/Piracola/Helium_Portable)：同系列 Helium 便携版项目。
-
 ## 项目简介
 
-本项目由 GitHub Actions 每日自动检查 Google 官方是否有最新 Chrome 离线安装包更新，集成 Chrome++ 组件并封装为便携版。项目同时构建 Stable 与 Beta 两个渠道，每个渠道提供 Windows x64 和 ARM64 两种架构，发布在同一个 GitHub Release 下。
+本项目由 GitHub Actions 每日检查 Google 官方 Chrome 离线安装包更新，集成 Chrome++ 并封装为便携版。Stable 与 Beta 两个渠道分别提供 Windows x64 与 ARM64 压缩包，发布在同一个 GitHub Release 下。
+
+构建系统由 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable) 提供，本仓库保存构建配置。
 
 ## 快速开始
 
-1. 从 [Releases](https://github.com/Piracola/Chrome-Portable/releases/latest) 下载压缩包（`Chrome++_stable_...7z` 为正式版，`Chrome++_beta_...7z` 为测试版），解压到任意位置
-2. 运行 `开始.bat` 创建桌面快捷方式，之后从快捷方式启动
+1. 从 [Releases](https://github.com/Piracola/Chrome-Portable/releases/latest) 下载压缩包（`Chrome++_stable_...7z` 为正式版，`Chrome++_beta_...7z` 为测试版），解压到任意位置。
+2. 运行 `开始.bat` 创建桌面快捷方式，之后从快捷方式启动。
 
-| 系统架构 | Stable 正式版 | Beta 测试版 |
-| --- | --- | --- |
-| Windows x64 | `Chrome++_stable_<版本>_<日期>.7z` | `Chrome++_beta_<版本>_<日期>.7z` |
-| Windows ARM64（Windows 11 on Arm） | `Chrome++_stable_arm64_<版本>_<日期>.7z` | `Chrome++_beta_arm64_<版本>_<日期>.7z` |
-
-ARM64 包使用 Google 官方 ARM64 浏览器和同架构 Chrome++ DLL。引擎在 x64 runner 上用 x64 `setdll` 修改 ARM64 PE，并在 verify 阶段校验导入表与 `chrome.exe`、`version.dll` 的 `Machine = 0xAA64`；ARM64 包的实际启动测试应在 ARM64 Windows 上进行。
-
-Chrome++ 组件随引擎包从 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable) 的 `setdll/` 目录发布，由引擎的每日同步工作流跟进上游。ARM64 Omaha 请求显式声明 Windows 11 完整系统版本和渠道参数，避免 API 回退到 x86 安装包。
-
-> ⚠️ Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退或无法启动。
+Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退或无法启动。
 
 ## 更新
 
-1. 关闭浏览器
-2. 删除 `Chrome` 文件夹或重命名为 `Chrome old` 以便于回退版本
-3. 解压新版压缩包内的 `Chrome` 文件夹（`Data`、`Cache` 保持不动）
+1. 关闭浏览器。
+2. 删除 `Chrome` 文件夹或重命名为 `Chrome old` 以便回退版本。
+3. 解压新版压缩包内的 `Chrome` 文件夹，`Data`、`Cache` 保持不动。
 
 ## 功能特性
 
@@ -71,9 +55,9 @@ Chrome++ 组件随引擎包从 [ChromiumPortable](https://github.com/Piracola/Ch
 
 删除解压根目录即可，便携版不写注册表。
 
-## 本地构建
+## 其他文档
 
-本地构建由主仓库的图形构建器完成，见 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable)。
+架构包命名、ARM64 构建校验与上游来源见 [docs/DETAILS.md](docs/DETAILS.md)。同系列项目见 [Edge_Portable](https://github.com/Piracola/Edge_Portable) 与 [Helium_Portable](https://github.com/Piracola/Helium_Portable)。
 
 ## 致谢
 

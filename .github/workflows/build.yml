@@ -14,158 +14,19 @@ on:
   schedule:
     - cron: "0 8 * * *"
 
-env:
-  TARGETS: chrome_stable,chrome_beta,chrome_stable_arm64,chrome_beta_arm64
-  BUILDER_REF: ${{ github.event.inputs.builder_ref || 'v2' }}
-
+# 流水线本体在 ChromiumPortable 的 reusable workflow 里：check（Linux，版本发现 + 配置校验）
+# → build（Windows，构建 → 校验 → 渲染 → 发布）。这里只声明触发条件与目标列表，
+# 加架构或加渠道改一行 targets 即可。
 jobs:
-  # 版本发现只是几个 HTTP 请求，用不到 Windows；check 确认有活干之后
-  # Windows runner 才启动。引擎从 ChromiumPortable 的 Release 下载，
-  # 不再 checkout 构建器仓库、不再装 Python。
-  check:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      update_needed: ${{ steps.check.outputs.UPDATE_NEEDED }}
-      env_json: ${{ steps.check.outputs.env_json }}
-    steps:
-      - name: Checkout Chrome repository
-        uses: actions/checkout@v7
-
-      - name: Test target configuration
-        run: node scripts/test-config.cjs
-
-      - name: Download engine bundle
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release download "$BUILDER_REF" \
-            --repo Piracola/ChromiumPortable \
-            --pattern 'portable-builder-linux-x64.zip*' \
-            --dir _engine
-          (cd _engine && sha256sum -c portable-builder-linux-x64.zip.sha256)
-          unzip -q _engine/portable-builder-linux-x64.zip -d _engine
-          chmod +x _engine/portable-builder-linux-x64/portable-builder
-
-      - name: Check for updates
-        id: check
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: _engine/portable-builder-linux-x64/portable-builder --config browser.json --workdir . check-targets "$TARGETS"
-
-      - name: Summarize
-        shell: bash
-        run: |
-          echo "UPDATE_NEEDED=${{ steps.check.outputs.UPDATE_NEEDED }}"
-          echo "STABLE_UPDATE=${{ steps.check.outputs.STABLE_UPDATE }} (${{ steps.check.outputs.UPSTREAM_STABLE }})"
-          echo "BETA_UPDATE=${{ steps.check.outputs.BETA_UPDATE }} (${{ steps.check.outputs.UPSTREAM_BETA }})"
-          echo "STABLE_ARM64_UPDATE=${{ steps.check.outputs.STABLE_ARM64_UPDATE }} (${{ steps.check.outputs.UPSTREAM_STABLE_ARM64 }})"
-          echo "BETA_ARM64_UPDATE=${{ steps.check.outputs.BETA_ARM64_UPDATE }} (${{ steps.check.outputs.UPSTREAM_BETA_ARM64 }})"
-          echo "CREATE_NEW_RELEASE=${{ steps.check.outputs.CREATE_NEW_RELEASE }}"
-          echo "MINOR_UPDATE=${{ steps.check.outputs.MINOR_UPDATE }}"
-          echo "RELEASE_ID=${{ steps.check.outputs.RELEASE_ID }}"
-          echo "RELEASE_TAG=${{ steps.check.outputs.RELEASE_TAG }}"
-
   build:
-    needs: check
-    if: github.event_name != 'schedule' || needs.check.outputs.update_needed == 'true'
-    runs-on: windows-latest
-    concurrency:
-      group: chrome-portable-build
-      cancel-in-progress: false
     permissions:
       contents: write
-    steps:
-      - name: Checkout Chrome repository
-        uses: actions/checkout@v7
-
-      - name: Download engine bundle
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release download "$env:BUILDER_REF" --repo Piracola/ChromiumPortable --pattern 'portable-builder-windows-x64.zip*' --dir _engine
-          $zip = Get-ChildItem _engine/*.zip | Select-Object -First 1
-          $expected = ((Get-Content "$($zip.FullName).sha256") -split '\s+')[0].ToLower()
-          $actual = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
-          if ($actual -ne $expected) { throw "engine bundle sha256 mismatch" }
-          Expand-Archive $zip.FullName -DestinationPath _engine -Force
-          New-Item -ItemType Directory -Force -Path build/assets | Out-Null
-          $exe = (Resolve-Path '_engine/portable-builder-windows-x64/portable-builder.exe').Path
-          "CPB_ENGINE=$exe" >> $env:GITHUB_ENV
-          Write-Host "CPB_ENGINE=$exe"
-
-      - name: Restore check results
-        shell: pwsh
-        env:
-          CHECK_ENV: ${{ needs.check.outputs.env_json }}
-        run: |
-          if (-not $env:CHECK_ENV) { throw "The check job produced no environment payload." }
-          foreach ($property in ($env:CHECK_ENV | ConvertFrom-Json).PSObject.Properties) {
-            "$($property.Name)=$($property.Value)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            Write-Host "$($property.Name)=$($property.Value)"
-          }
-
-      - name: Set build date
-        shell: pwsh
-        run: |
-          $date = Get-Date -Format 'yyyy-MM-dd'
-          "BUILD_DATE=$date" >> $env:GITHUB_ENV
-
-      - name: Build updated channels
-        run: |
-          & $env:CPB_ENGINE --config browser.json --workdir . build-targets "$env:TARGETS"
-
-      - name: Verify x64 archives and smoke test
-        run: |
-          & $env:CPB_ENGINE --config browser.json --target 'chrome_stable,chrome_beta' --workdir . verify-targets
-          if ($LASTEXITCODE -ne 0) { throw 'x64 archive verification failed' }
-
-      - name: Verify ARM64 archives without launching on x64
-        run: |
-          & $env:CPB_ENGINE --config browser.json --target 'chrome_stable_arm64,chrome_beta_arm64' --workdir . verify-targets --no-smoke
-          if ($LASTEXITCODE -ne 0) { throw 'ARM64 archive verification failed' }
-
-      - name: Render release metadata
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          & $env:CPB_ENGINE --config browser.json --workdir . render-release-targets "$env:TARGETS"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: Chrome-Portable-Builds
-          path: build/assets/*.7z
-          retention-days: 15
-
-      - name: Update existing release
-        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          & $env:CPB_ENGINE --config browser.json --workdir . update-release-targets "$env:TARGETS"
-
-      - name: Upload assets to existing release
-        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'false'
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: ${{ env.RELEASE_TITLE }}
-          body_path: ${{ env.RELEASE_BODY_PATH }}
-          files: build/assets/*.7z
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create new release
-        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') && env.UPDATE_NEEDED == 'true' && env.CREATE_NEW_RELEASE == 'true'
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: ${{ env.RELEASE_TITLE }}
-          body_path: ${{ env.RELEASE_BODY_PATH }}
-          files: build/assets/*.7z
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    uses: Piracola/ChromiumPortable/.github/workflows/portable-browser.yml@main
+    with:
+      builder-repository: Piracola/ChromiumPortable
+      builder-ref: ${{ github.event.inputs.builder_ref || 'v2' }}
+      config: browser.json
+      targets: chrome_stable,chrome_beta,chrome_stable_arm64,chrome_beta_arm64
+      artifact-name: Chrome-Portable-Builds
+      pre-check-command: node scripts/test-config.cjs
+      artifact-retention-days: 15
