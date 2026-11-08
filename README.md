@@ -36,9 +36,9 @@
 | Windows x64 | `Chrome++_stable_<版本>_<日期>.7z` | `Chrome++_beta_<版本>_<日期>.7z` |
 | Windows ARM64（Windows 11 on Arm） | `Chrome++_stable_arm64_<版本>_<日期>.7z` | `Chrome++_beta_arm64_<版本>_<日期>.7z` |
 
-ARM64 包使用 Google 官方 ARM64 浏览器和同架构 Chrome++ DLL。在 x64 Actions runner 上使用 x64 `setdll` 修改 PE 文件，并验证导入表和两个文件的 `Machine = 0xAA64`；ARM64 包的实际启动测试应在 ARM64 Windows 上进行。
+ARM64 包使用 Google 官方 ARM64 浏览器和同架构 Chrome++ DLL。引擎在 x64 runner 上用 x64 `setdll` 修改 ARM64 PE，并在 verify 阶段校验导入表与 `chrome.exe`、`version.dll` 的 `Machine = 0xAA64`；ARM64 包的实际启动测试应在 ARM64 Windows 上进行。
 
-构建固定使用 [Chrome++ 1.18.3](https://github.com/Bush2021/chrome_plus/releases/tag/1.18.3)，组件压缩包 SHA256 为 `07a0dbd78062fdfbeff8806de7ea42e983c287367bd998abec070d600dfaf3f6`。升级时需同步更新工作流中的版本与摘要。ARM64 Omaha 请求显式声明 Windows 11 完整系统版本和渠道参数，避免 API 回退到 x86 安装包。
+Chrome++ 组件随引擎包从 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable) 的 `setdll/` 目录发布，由引擎的每日同步工作流跟进上游。ARM64 Omaha 请求显式声明 Windows 11 完整系统版本和渠道参数，避免 API 回退到 x86 安装包。
 
 > ⚠️ Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退或无法启动。
 
