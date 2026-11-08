@@ -24,12 +24,21 @@
 
 ## 项目简介
 
-本项目由 GitHub Actions 每日自动检查 Google 官方是否有最新 Chrome 离线安装包更新，集成 Chrome++ 组件并封装为便携版。项目同时构建 Stable 与 Beta 两个渠道，发布在同一个 GitHub Release 下。
+本项目由 GitHub Actions 每日自动检查 Google 官方是否有最新 Chrome 离线安装包更新，集成 Chrome++ 组件并封装为便携版。项目同时构建 Stable 与 Beta 两个渠道，每个渠道提供 Windows x64 和 ARM64 两种架构，发布在同一个 GitHub Release 下。
 
 ## 快速开始
 
 1. 从 [Releases](https://github.com/Piracola/Chrome-Portable/releases/latest) 下载压缩包（`Chrome++_stable_...7z` 为正式版，`Chrome++_beta_...7z` 为测试版），解压到任意位置
 2. 运行 `开始.bat` 创建桌面快捷方式，之后从快捷方式启动
+
+| 系统架构 | Stable 正式版 | Beta 测试版 |
+| --- | --- | --- |
+| Windows x64 | `Chrome++_stable_<版本>_<日期>.7z` | `Chrome++_beta_<版本>_<日期>.7z` |
+| Windows ARM64（Windows 11 on Arm） | `Chrome++_stable_arm64_<版本>_<日期>.7z` | `Chrome++_beta_arm64_<版本>_<日期>.7z` |
+
+ARM64 包使用 Google 官方 ARM64 浏览器和同架构 Chrome++ DLL。在 x64 Actions runner 上使用 x64 `setdll` 修改 PE 文件，并验证导入表和两个文件的 `Machine = 0xAA64`；ARM64 包的实际启动测试应在 ARM64 Windows 上进行。
+
+构建固定使用 [Chrome++ 1.18.3](https://github.com/Bush2021/chrome_plus/releases/tag/1.18.3)，组件压缩包 SHA256 为 `07a0dbd78062fdfbeff8806de7ea42e983c287367bd998abec070d600dfaf3f6`。升级时需同步更新工作流中的版本与摘要。ARM64 Omaha 请求显式声明 Windows 11 完整系统版本和渠道参数，避免 API 回退到 x86 安装包。
 
 > ⚠️ Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退或无法启动。
 
