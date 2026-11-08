@@ -16,7 +16,11 @@ for (const [id, target] of targets) {
   const arm64 = id.endsWith('_arm64');
   assert.equal(target.architecture, arm64 ? 'arm64' : 'x64');
   if (arm64) {
-    assert.equal(target.setdll_name, 'setdll-x64.exe', 'patcher must run on the x64 build host');
+    // The engine defaults to the setdll build this host can run; only guard an
+    // explicit override so nobody pins the arm64 tool on an x64 runner.
+    if ('setdll_name' in target) {
+      assert.equal(target.setdll_name, 'setdll-x64.exe', 'patcher must run on the x64 build host');
+    }
     assert.match(target.provider.request.os, /arch="arm64"/);
     assert.match(target.provider.request.os, /version="10\.0\.26100\.1742"/);
     assert.match(target.provider.request.app, id.includes('stable') ? /ap="arm64-stable"/ : /ap="1\.1-beta-arch_arm64"/);

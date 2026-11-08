@@ -95,8 +95,7 @@
         "asset_match": "^Chrome\\+\\+_stable_arm64_[0-9]+\\.",
         "version_pattern": "Stable ARM64\\s*版本[:：]\\s*(\\d+\\.\\d+\\.\\d+\\.\\d+)",
         "asset_match_mode": "regex"
-      },
-      "setdll_name": "setdll-x64.exe"
+      }
     },
     "chrome_beta_arm64": {
       "name": "Chrome",
@@ -129,8 +128,7 @@
         "asset_match": "^Chrome\\+\\+_beta_arm64_[0-9]+\\.",
         "version_pattern": "Beta ARM64\\s*版本[:：]\\s*(\\d+\\.\\d+\\.\\d+\\.\\d+)",
         "asset_match_mode": "regex"
-      },
-      "setdll_name": "setdll-x64.exe"
+      }
     }
   }
 }
