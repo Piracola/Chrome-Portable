@@ -9,7 +9,9 @@
 [![构建状态][badge-build]][link-actions]
 [![许可证][badge-license]][link-license]
 
-**[⬇ 下载最新版本][link-release]** · **[📖 使用说明与常见问题][link-site]** · [更多设置与构建细节](docs/DETAILS.md)
+**语言 / Language:** **简体中文** · [English](README.en.md)
+
+**[⬇ 下载最新版本][link-release]** · **[📖 使用说明与常见问题][link-site]**
 
 </div>
 
@@ -17,14 +19,23 @@
 
 本项目由 GitHub Actions 每日检查 Google 官方 Chrome 离线安装包更新，集成 Chrome++ 并封装为便携版。Stable 与 Beta 两个渠道分别提供 Windows x64 与 ARM64 压缩包，发布在同一个 GitHub Release 下。
 
-构建系统由 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable) 提供，本仓库保存构建配置。
+构建系统由 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable) 提供，本仓库只保存构建配置；本地构建步骤见核心仓的[开发文档](https://github.com/Piracola/ChromiumPortable/blob/main/docs/DEVELOPMENT.md)。
 
 ## 快速开始
 
 1. 从 [Releases](https://github.com/Piracola/Chrome-Portable/releases/latest) 下载压缩包（`Chrome++_stable_...7z` 为正式版，`Chrome++_beta_...7z` 为测试版），解压到任意位置。
-2. 运行 `开始.bat` 创建桌面快捷方式，之后从快捷方式启动。
+2. 运行 `开始.bat` 在解压根目录生成 `Chrome.lnk` 快捷方式，之后从快捷方式启动。
 
 Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退或无法启动。
+
+## 压缩包与架构
+
+| 系统架构 | Stable 正式版 | Beta 测试版 |
+| --- | --- | --- |
+| Windows x64 | `Chrome++_stable_<版本>_<日期>.7z` | `Chrome++_beta_<版本>_<日期>.7z` |
+| Windows ARM64（Windows 11 on Arm） | `Chrome++_stable_arm64_<版本>_<日期>.7z` | `Chrome++_beta_arm64_<版本>_<日期>.7z` |
+
+ARM64 包用的是 Google 官方 ARM64 浏览器和同架构的 Chrome++ 组件。引擎在 x64 机器上用 x64 的 `setdll` 改写 ARM64 PE，verify 阶段校验导入表以及 `chrome.exe`、`version.dll` 的 `Machine = 0xAA64`；真实启动测试得在 ARM64 Windows 上做。
 
 ## 更新
 
@@ -34,7 +45,7 @@ Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退�
 
 ## 功能特性
 
-以下功能均已默认启用，可在 `chrome++.ini` 中调整或关闭：
+以下增强均已集成，除注明外默认启用，可在 `chrome++.ini` 中调整或关闭：
 
 - 用户数据及缓存均存储于与 `Chrome` 文件夹同级的 `Data` 和 `Cache` 文件夹（解压根目录下）
 - 双击关闭标签页、保留最后一个标签页
@@ -49,19 +60,21 @@ Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退�
 
 数据目录的位置由 `Chrome\chrome++.ini` 里的 `data_dir` 和 `cache_dir` 两行决定，默认值是 `%app%\..\Data` 和 `%app%\..\Cache`（`%app%` 代表 `chrome.exe` 所在目录，所以默认落在 `Chrome` 文件夹旁边）。值支持绝对路径，目录会自动创建。注意这个文件是 **UTF-16 编码**（记事本另存时选「Unicode」）。
 
-默认路径本就跟着程序走，整个文件夹搬动不需要改，只有想把数据放到程序外（比如另一个分区）时才需要动它。
+默认路径相对于主程序目录，移动整个文件夹不需要修改。需要将数据存放到程序目录之外时，可改用绝对路径。
 
 ## 卸载
 
 删除解压根目录即可，便携版不写注册表。
 
-## 其他文档
+## 相关项目
 
-架构包命名、ARM64 构建校验与上游来源见 [docs/DETAILS.md](docs/DETAILS.md)。同系列项目见 [Edge_Portable](https://github.com/Piracola/Edge_Portable) 与 [Helium_Portable](https://github.com/Piracola/Helium_Portable)。
+- [ChromiumPortable](https://github.com/Piracola/ChromiumPortable)：通用构建核心，Chrome++ 组件随引擎包从它的 `setdll/` 目录发布，上游同步也在那里完成
+- [Edge_Portable](https://github.com/Piracola/Edge_Portable)：同系列 Microsoft Edge 便携版
+- [Helium_Portable](https://github.com/Piracola/Helium_Portable)：同系列 Helium 便携版
 
 ## 致谢
 
-本项目基于以下优秀开源项目构建：
+本项目使用以下开源项目与上游服务：
 
 | 项目 | 说明 |
 | --- | --- |
