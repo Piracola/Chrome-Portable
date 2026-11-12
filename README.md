@@ -28,7 +28,8 @@
 
 Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退或无法启动。
 
-## 压缩包与架构
+<details>
+<summary>压缩包与架构</summary>
 
 | 系统架构 | Stable 正式版 | Beta 测试版 |
 | --- | --- | --- |
@@ -36,6 +37,8 @@ Stable 与 Beta 不建议交替切换，可能导致数据读取错误、闪退�
 | Windows ARM64（Windows 11 on Arm） | `Chrome++_stable_arm64_<版本>_<日期>.7z` | `Chrome++_beta_arm64_<版本>_<日期>.7z` |
 
 ARM64 包用的是 Google 官方 ARM64 浏览器和同架构的 Chrome++ 组件。引擎在 x64 机器上用 x64 的 `setdll` 改写 ARM64 PE，verify 阶段校验导入表以及 `chrome.exe`、`version.dll` 的 `Machine = 0xAA64`；真实启动测试得在 ARM64 Windows 上做。
+
+</details>
 
 ## 更新
 
@@ -56,11 +59,14 @@ ARM64 包用的是 Google 官方 ARM64 浏览器和同架构的 Chrome++ 组件�
 - 发布包不携带 Google Update / Google Updater，因此不会自行替换整套浏览器；扩展和安全组件更新保持可用
 - 更多增强功能请查看 `chrome++.ini`
 
-## 更改数据目录位置
+<details>
+<summary>更改数据目录位置</summary>
 
 数据目录的位置由 `Chrome\chrome++.ini` 里的 `data_dir` 和 `cache_dir` 两行决定，默认值是 `%app%\..\Data` 和 `%app%\..\Cache`（`%app%` 代表 `chrome.exe` 所在目录，所以默认落在 `Chrome` 文件夹旁边）。值支持绝对路径，目录会自动创建。注意这个文件是 **UTF-16 编码**（记事本另存时选「Unicode」）。
 
 默认路径相对于主程序目录，移动整个文件夹不需要修改。需要将数据存放到程序目录之外时，可改用绝对路径。
+
+</details>
 
 ## 卸载
 
@@ -72,7 +78,8 @@ ARM64 包用的是 Google 官方 ARM64 浏览器和同架构的 Chrome++ 组件�
 - [Edge_Portable](https://github.com/Piracola/Edge_Portable)：同系列 Microsoft Edge 便携版
 - [Helium_Portable](https://github.com/Piracola/Helium_Portable)：同系列 Helium 便携版
 
-## 致谢
+<details>
+<summary>致谢</summary>
 
 本项目使用以下开源项目与上游服务：
 
@@ -80,6 +87,8 @@ ARM64 包用的是 Google 官方 ARM64 浏览器和同架构的 Chrome++ 组件�
 | --- | --- |
 | [Bush2021/chrome\_plus](https://github.com/Bush2021/chrome_plus) | 提供核心便携化组件（Chrome++ / version.dll / setdll） |
 | Google Omaha update2 API | Chrome 官方版本查询与安装包下载 |
+
+</details>
 
 ## 许可证
 

@@ -28,7 +28,8 @@ The build system is provided by [ChromiumPortable](https://github.com/Piracola/C
 
 Avoid switching back and forth between Stable and Beta: it can cause profile read errors, crashes, or a browser that refuses to start.
 
-## Archives and architectures
+<details>
+<summary>Archives and architectures</summary>
 
 | Architecture | Stable channel | Beta channel |
 | --- | --- | --- |
@@ -36,6 +37,8 @@ Avoid switching back and forth between Stable and Beta: it can cause profile rea
 | Windows ARM64 (Windows 11 on Arm) | `Chrome++_stable_arm64_<version>_<date>.7z` | `Chrome++_beta_arm64_<version>_<date>.7z` |
 
 The ARM64 archive pairs Google's official ARM64 browser with a matching-architecture Chrome++ component. The engine rewrites the ARM64 PE on an x64 machine using the x64 `setdll`, and the verify stage checks the import table plus `Machine = 0xAA64` on both `chrome.exe` and `version.dll`; an actual launch test has to happen on ARM64 Windows.
+
+</details>
 
 ## Updating
 
@@ -56,11 +59,14 @@ Everything below is included and enabled by default unless noted; adjust or swit
 - The release carries no Google Update / Google Updater, so the browser never replaces itself with a full install; extension and security component updates keep working
 - More enhancements are documented in `chrome++.ini`
 
-## Changing the data directory
+<details>
+<summary>Changing the data directory</summary>
 
 The location is set by the `data_dir` and `cache_dir` lines in `Chrome\chrome++.ini`. Defaults are `%app%\..\Data` and `%app%\..\Cache`, where `%app%` is the folder holding `chrome.exe`, so data lands next to `Chrome`. Absolute paths are accepted and directories are created as needed. Note that the file is **UTF-16 encoded** (pick "Unicode" when saving from Notepad).
 
 Because the defaults are relative to the program folder, moving the whole tree needs no edits. Switch to an absolute path if you want data stored outside the program folder.
+
+</details>
 
 ## Uninstalling
 
@@ -72,12 +78,15 @@ Delete the extraction root. The portable build writes nothing to the registry.
 - [Edge_Portable](https://github.com/Piracola/Edge_Portable): the Microsoft Edge portable build
 - [Helium_Portable](https://github.com/Piracola/Helium_Portable): the Helium portable build
 
-## Credits
+<details>
+<summary>Credits</summary>
 
 | Project | Role |
 | --- | --- |
 | [Bush2021/chrome\_plus](https://github.com/Bush2021/chrome_plus) | Core portability components (Chrome++ / version.dll / setdll) |
 | Google Omaha update2 API | Official version lookup and installer download |
+
+</details>
 
 ## License
 
