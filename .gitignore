@@ -1,7 +1,3 @@
 .idea
-Pipfile.lock
-chrome_installer-main
-build/*
+build/
 7zr.exe
-__pycache__/
-*.py[cod]
