@@ -14,9 +14,6 @@ on:
   schedule:
     - cron: "0 8 * * *"
 
-# 流水线本体在 ChromiumPortable 的 reusable workflow 里：check（Linux，版本发现 + 配置校验）
-# → build（Windows，构建 → 校验 → 渲染 → 发布）。这里只声明触发条件与目标列表，
-# 加架构或加渠道改一行 targets 即可。
 jobs:
   build:
     permissions:
