@@ -17,7 +17,7 @@
 
 ## 项目简介
 
-本项目由 GitHub Actions 每日检查 Google 官方 Chrome 离线安装包更新，集成 Chrome++ 并封装为便携版。Stable 与 Beta 两个渠道分别提供 Windows x64 与 ARM64 压缩包，发布在同一个 GitHub Release 下。
+本项目由 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable) 的 `watch-upstream` 工作流每日检查 Google 官方 Chrome 离线安装包更新，发现新版本后向本仓库派发构建，再由 GitHub Actions 集成 Chrome++ 并封装为便携版。Stable 与 Beta 两个渠道分别提供 Windows x64 与 ARM64 压缩包，发布在同一个 GitHub Release 下。
 
 构建系统由 [ChromiumPortable](https://github.com/Piracola/ChromiumPortable) 提供，本仓库只保存构建配置；本地构建步骤见核心仓的[开发文档](https://github.com/Piracola/ChromiumPortable/blob/main/docs/DEVELOPMENT.md)。
 

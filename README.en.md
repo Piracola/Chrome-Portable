@@ -17,7 +17,7 @@ Portable Google Chrome with Chrome++ integrated, built automatically by GitHub A
 
 ## About
 
-GitHub Actions checks Google's official Chrome offline installers every day, integrates Chrome++, and repackages the result as a portable build. The Stable and Beta channels each ship both a Windows x64 and an ARM64 archive, published under one shared GitHub Release.
+[ChromiumPortable](https://github.com/Piracola/ChromiumPortable)'s `watch-upstream` workflow checks Google's official Chrome offline installers every day and dispatches a build here when a new version appears; GitHub Actions then integrates Chrome++ and repackages the result as a portable build. The Stable and Beta channels each ship both a Windows x64 and an ARM64 archive, published under one shared GitHub Release.
 
 The build system is provided by [ChromiumPortable](https://github.com/Piracola/ChromiumPortable); this repository only holds the build configuration. For a local build, see the core repository's [development docs](https://github.com/Piracola/ChromiumPortable/blob/main/docs/DEVELOPMENT.md).
 
